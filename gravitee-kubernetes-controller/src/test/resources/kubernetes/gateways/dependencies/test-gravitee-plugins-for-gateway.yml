@@ -1,0 +1,74 @@
+#
+# Copyright (C) 2015 The Gravitee team (http://gravitee.io)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+apiVersion: "gravitee.io/v1alpha1"
+kind: GraviteePlugins
+metadata:
+  name: mygateway-plugins
+  namespace: default
+  generation: 1
+spec:
+  plugins:
+    key-less-poc:
+        policy: key_less
+    jwt-poc:
+        policy: jwt
+        configuration:
+          signature: "HMAC_HS256"
+          publicKeyResolver: "GIVEN_KEY"
+          useSystemProxy: false
+          extractClaims: false
+          propagateAuthHeader: true
+          resolverParameter:
+            valueFrom:
+              secretKeyRef:
+                name: myapp
+                key: myapp-password
+    oauth2:
+      policy: oauth2
+      configuration:
+        oauthResource: default.internal-gw-plugins.oauth2-resource
+        extractPayload: false
+        checkRequiredScopes: false
+        requiredScopes: ["email", "profile"]
+        modeStrict: true
+        propagateAuthHeader: true
+    oauth2-resource:
+      # resource will be named : <namespace>.<custom-res-name>.oauth2-resource
+      resource: oauth2
+      configuration:
+        authorizationServerUrl: e
+        introspectionEndpoint: e
+        clientId: e
+        clientSecret: e
+    quota-policy:
+      policy: quota
+      configuration:
+        async: false
+        addHeaders: true
+        quota:
+          periodTime: 2
+          periodTimeUnit: "HOURS"
+          limit: 1000
+    rate-limit:
+      policy: rate-limit
+      configuration:
+        async: false
+        addHeaders: true
+        rate:
+          periodTime: 1
+          periodTimeUnit: "SECONDS"
+          limit: 10
