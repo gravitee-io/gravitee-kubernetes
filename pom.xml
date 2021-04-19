@@ -23,11 +23,11 @@
     <parent>
         <groupId>io.gravitee</groupId>
         <artifactId>gravitee-parent</artifactId>
-        <version>19</version>
+        <version>19.2.1</version>
     </parent>
 
     <groupId>io.gravitee.kubernetes</groupId>
-    <artifactId>gravitee-kubernetes-parent</artifactId>
+    <artifactId>gravitee-kubernetes</artifactId>
     <packaging>pom</packaging>
 
     <version>0.1.0-SNAPSHOT</version>
@@ -49,10 +49,10 @@
     </modules>
 
     <properties>
-        <gravitee-parent.version>19</gravitee-parent.version>
+        <gravitee-parent.version>19.2.1</gravitee-parent.version>
         <gravitee-common.version>1.19.1</gravitee-common.version>
-        <gravitee-node.version>1.11.0-SNAPSHOT</gravitee-node.version>
-        <gravitee-gateway.version>3.7.0-SNAPSHOT</gravitee-gateway.version>
+        <gravitee-node.version>1.11.0</gravitee-node.version>
+        <gravitee-gateway.version>3.7.0</gravitee-gateway.version>
         <snakeyaml.version>1.26</snakeyaml.version>
         <fabric8.version>4.11.1</fabric8.version>
         <rxjava.version>2.2.19</rxjava.version>
@@ -169,6 +169,7 @@
                         <exclude>**/*.adoc</exclude>
                         <exclude>**/*.factories</exclude>
                         <exclude>**/*.properties</exclude>
+                        <exclude>.circleci/**/*</exclude>
                     </excludes>
                 </configuration>
                 <executions>
