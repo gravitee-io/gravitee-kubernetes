@@ -30,7 +30,7 @@
     <artifactId>gravitee-kubernetes</artifactId>
     <packaging>pom</packaging>
 
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.1.0</version>
     <name>Gravitee IO - Kubernetes</name>
 
     <scm>
@@ -52,7 +52,7 @@
         <gravitee-parent.version>19.2.1</gravitee-parent.version>
         <gravitee-common.version>1.19.1</gravitee-common.version>
         <gravitee-node.version>1.11.0</gravitee-node.version>
-        <gravitee-gateway.version>3.7.0</gravitee-gateway.version>
+        <gravitee-gateway.version>3.7.1</gravitee-gateway.version>
         <snakeyaml.version>1.26</snakeyaml.version>
         <fabric8.version>4.11.1</fabric8.version>
         <rxjava.version>2.2.19</rxjava.version>
