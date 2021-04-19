@@ -331,6 +331,7 @@ workflows:
           # maven_profile_id: << pipeline.parameters.maven_profile_id >>
           maven_profile_id: "gravitee-release"
           s3_bucket_name: << pipeline.parameters.s3_bucket_name >>
+          gio_release_version: << pipeline.parameters.replayed_release >>
           # container_gun_image_org: 'circleci'
           # container_gun_image_name: 'openjdk'
           # container_gun_image_tag: '11.0.3-jdk-stretch'
