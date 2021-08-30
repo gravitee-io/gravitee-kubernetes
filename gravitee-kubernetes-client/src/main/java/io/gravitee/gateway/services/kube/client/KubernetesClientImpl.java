@@ -50,8 +50,8 @@ public class KubernetesClientImpl implements KubernetesClient {
 
     @Autowired
     public KubernetesClientImpl(Vertx vertx, KubernetesConfig kubernetesConfig) {
-        this.client = WebClient.create(vertx, getHttpClientOptions());
         this.config = kubernetesConfig;
+        this.client = WebClient.create(vertx, getHttpClientOptions());
     }
 
     @Override
@@ -88,7 +88,7 @@ public class KubernetesClientImpl implements KubernetesClient {
     @Override
     public Maybe<Secret> secret(String namespace, String secretName) {
         return client
-            .get(String.format("/api/v1/secret/%s/%s", namespace, secretName))
+            .get(String.format("/api/v1/namespaces/%s/secrets/%s", namespace, secretName))
             .putHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
             .bearerTokenAuthentication(config.getServiceAccountToken())
             .rxSend()
@@ -186,10 +186,10 @@ public class KubernetesClientImpl implements KubernetesClient {
 
         return new WebClientOptions()
             .setTrustOptions(trustOptions)
-            .setVerifyHost(true)
-            .setTrustAll(false)
+            .setVerifyHost(config.verifyHost())
+            .setTrustAll(!config.verifyHost())
             .setDefaultHost(config.getApiServerHost())
             .setDefaultPort(config.getApiServerPort())
-            .setSsl(true);
+            .setSsl(config.useSSL());
     }
 }

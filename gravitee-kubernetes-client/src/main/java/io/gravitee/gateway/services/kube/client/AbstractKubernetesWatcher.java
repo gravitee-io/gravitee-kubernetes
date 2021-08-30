@@ -122,13 +122,13 @@ public abstract class AbstractKubernetesWatcher {
 
         return new HttpClientOptions()
             .setTrustOptions(trustOptions)
-            .setVerifyHost(true)
-            .setTrustAll(false)
+            .setVerifyHost(config.verifyHost())
+            .setTrustAll(!config.verifyHost())
             .setDefaultHost(config.getApiServerHost())
             .setDefaultPort(config.getApiServerPort())
             .setProtocolVersion(HttpVersion.HTTP_2)
             .setHttp2ClearTextUpgrade(false)
-            .setSsl(true);
+            .setSsl(config.useSSL());
     }
 
     // property methods

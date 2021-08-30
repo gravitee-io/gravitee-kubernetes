@@ -49,7 +49,8 @@ public class KubernetesConfig {
     private String apiServerHost;
     private int apiServerPort;
     private String caCertData;
-    private String namespace;
+    private boolean verifyHost = true;
+    private boolean useSSL = true;
     private String serviceAccountToken;
     private long websocketTimeout = DEFAULT_WEBSOCKET_TIMEOUT;
 
@@ -144,12 +145,20 @@ public class KubernetesConfig {
         this.caCertData = caCertData;
     }
 
-    public String getNamespace() {
-        return namespace;
+    public boolean verifyHost() {
+        return verifyHost;
     }
 
-    public void setNamespace(String namespace) {
-        this.namespace = namespace;
+    public void setVerifyHost(boolean verifyHost) {
+        this.verifyHost = verifyHost;
+    }
+
+    public boolean useSSL() {
+        return useSSL;
+    }
+
+    public void setUseSSL(boolean useSSL) {
+        this.useSSL = useSSL;
     }
 
     public String getServiceAccountToken() {
