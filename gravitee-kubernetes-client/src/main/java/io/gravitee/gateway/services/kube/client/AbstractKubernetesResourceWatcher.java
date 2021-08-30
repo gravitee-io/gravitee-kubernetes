@@ -37,24 +37,26 @@ import org.slf4j.LoggerFactory;
  * @author GraviteeSource Team
  * @since 3.9.11
  */
-public abstract class AbstractKubernetesWatcher {
+public abstract class AbstractKubernetesResourceWatcher implements KubernetesResourceWatcher {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractKubernetesWatcher.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractKubernetesResourceWatcher.class);
 
     private final Vertx vertx;
     private final KubernetesClient kubernetesClient;
     private final KubernetesConfig config;
 
-    public AbstractKubernetesWatcher(Vertx vertx, KubernetesClient kubernetesClient, KubernetesConfig kubernetesConfig) {
+    protected AbstractKubernetesResourceWatcher(Vertx vertx, KubernetesClient kubernetesClient, KubernetesConfig kubernetesConfig) {
         this.vertx = vertx;
         this.kubernetesClient = kubernetesClient;
         this.config = kubernetesConfig;
     }
 
+    @Override
     public void watch(String namespace) {
         watch(namespace, (e -> true)); // doesn't filter anything
     }
 
+    @Override
     public void watch(String namespace, Predicate<Event> resourceNamePredicate) {
         retrieveLastResourceVersion(namespace)
             .doOnSuccess(
