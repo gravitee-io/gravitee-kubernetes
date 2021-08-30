@@ -26,7 +26,7 @@ import io.gravitee.gateway.services.kube.client.model.v1.SecretList;
 import io.reactivex.Maybe;
 import io.reactivex.Single;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.PemTrustOptions;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.ext.web.client.WebClient;
@@ -181,12 +181,13 @@ public class KubernetesClientImpl implements KubernetesClient {
     }
 
     private WebClientOptions getHttpClientOptions() {
-        JksOptions jksOptions = new JksOptions().setValue(Buffer.buffer(config.getCaTrustStore())).setPassword("");
+        PemTrustOptions trustOptions = new PemTrustOptions();
+        trustOptions.addCertValue(Buffer.buffer(config.getCaCertData()));
 
         return new WebClientOptions()
-            .setKeyStoreOptions(jksOptions)
-            .setVerifyHost(false)
-            .setTrustAll(true)
+            .setTrustOptions(trustOptions)
+            .setVerifyHost(true)
+            .setTrustAll(false)
             .setDefaultHost(config.getApiServerHost())
             .setDefaultPort(config.getApiServerPort())
             .setSsl(true);

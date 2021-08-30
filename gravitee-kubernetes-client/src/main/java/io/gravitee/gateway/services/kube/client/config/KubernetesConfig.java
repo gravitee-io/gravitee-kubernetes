@@ -51,14 +51,12 @@ public class KubernetesConfig {
     private String caCertData;
     private String namespace;
     private String serviceAccountToken;
-    private byte[] caTrustStore;
     private long websocketTimeout = DEFAULT_WEBSOCKET_TIMEOUT;
 
     public KubernetesConfig() {
         loadApiServerInfo();
         loadKubernetesCaFile();
         loadServiceAccountToken();
-        loadCaTrustStore();
     }
 
     /**
@@ -112,27 +110,6 @@ public class KubernetesConfig {
         }
     }
 
-    private void loadCaTrustStore() {
-        try {
-            KeyStore trustStore = KeyStore.getInstance("jks");
-            trustStore.load(null, null);
-
-            CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-            Certificate certificate = certificateFactory.generateCertificate(
-                new ByteArrayInputStream(getCaCertData().getBytes(StandardCharsets.UTF_8))
-            );
-
-            trustStore.setCertificateEntry("apiserver", certificate);
-
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            trustStore.store(outputStream, new char[0]);
-
-            this.setCaTrustStore(outputStream.toByteArray());
-        } catch (CertificateException | KeyStoreException | IOException | NoSuchAlgorithmException e) {
-            LOGGER.error("Unable to create Kubernetes CA trust store.", e);
-        }
-    }
-
     private <T> String getSystemPropertyOrEnvVar(String propertyName, T defaultValue) {
         String value = System.getProperty(propertyName);
         if (StringUtils.isEmpty(value)) {
@@ -181,14 +158,6 @@ public class KubernetesConfig {
 
     public void setServiceAccountToken(String serviceAccountToken) {
         this.serviceAccountToken = serviceAccountToken;
-    }
-
-    public byte[] getCaTrustStore() {
-        return caTrustStore;
-    }
-
-    public void setCaTrustStore(byte[] caTrustStore) {
-        this.caTrustStore = caTrustStore;
     }
 
     public long getWebsocketTimeout() {

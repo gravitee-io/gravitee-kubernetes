@@ -24,7 +24,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.WebSocketConnectOptions;
-import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.PemTrustOptions;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.http.HttpClient;
 import java.util.concurrent.atomic.AtomicReference;
@@ -117,12 +117,13 @@ public abstract class AbstractKubernetesWatcher {
     public abstract void eventReceived(Event event);
 
     protected HttpClientOptions getHttpClientOptions() {
-        JksOptions jksOptions = new JksOptions().setValue(Buffer.buffer(config.getCaTrustStore())).setPassword("");
+        PemTrustOptions trustOptions = new PemTrustOptions();
+        trustOptions.addCertValue(Buffer.buffer(config.getCaCertData()));
 
         return new HttpClientOptions()
-            .setKeyStoreOptions(jksOptions)
-            .setVerifyHost(false)
-            .setTrustAll(true)
+            .setTrustOptions(trustOptions)
+            .setVerifyHost(true)
+            .setTrustAll(false)
             .setDefaultHost(config.getApiServerHost())
             .setDefaultPort(config.getApiServerPort())
             .setProtocolVersion(HttpVersion.HTTP_2)
