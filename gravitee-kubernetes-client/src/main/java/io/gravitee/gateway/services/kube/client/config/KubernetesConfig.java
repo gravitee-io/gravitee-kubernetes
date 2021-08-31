@@ -60,6 +60,24 @@ public class KubernetesConfig {
         loadServiceAccountToken();
     }
 
+    public KubernetesConfig(
+        String apiServerHost,
+        int apiServerPort,
+        String caCertData,
+        boolean verifyHost,
+        boolean useSSL,
+        String serviceAccountToken,
+        long websocketTimeout
+    ) {
+        this.apiServerHost = apiServerHost;
+        this.apiServerPort = apiServerPort;
+        this.caCertData = caCertData;
+        this.verifyHost = verifyHost;
+        this.useSSL = useSSL;
+        this.serviceAccountToken = serviceAccountToken;
+        this.websocketTimeout = websocketTimeout;
+    }
+
     /**
      * Find the Kubernetes API Server HOST, PORT from within the pod
      */

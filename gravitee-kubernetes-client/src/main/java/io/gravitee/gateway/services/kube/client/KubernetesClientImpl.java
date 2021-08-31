@@ -93,7 +93,7 @@ public class KubernetesClientImpl implements KubernetesClient {
             .bearerTokenAuthentication(config.getServiceAccountToken())
             .rxSend()
             .toMaybe()
-            .map(
+            .flatMap(
                 response -> {
                     if (response.statusCode() != 200) {
                         throw new RuntimeException(
@@ -108,9 +108,9 @@ public class KubernetesClientImpl implements KubernetesClient {
                         Secret secret = response.bodyAsJsonObject().mapTo(Secret.class);
                         if (secret == null) {
                             LOGGER.error("Unable to retrieve secret {} from namespace {}", secretName, namespace);
-                            return null;
+                            return Maybe.empty();
                         } else {
-                            return secret;
+                            return Maybe.just(secret);
                         }
                     }
                 }
@@ -156,7 +156,7 @@ public class KubernetesClientImpl implements KubernetesClient {
             .bearerTokenAuthentication(config.getServiceAccountToken())
             .rxSend()
             .toMaybe()
-            .map(
+            .flatMap(
                 response -> {
                     if (response.statusCode() != 200) {
                         throw new RuntimeException(
@@ -171,9 +171,9 @@ public class KubernetesClientImpl implements KubernetesClient {
                         ConfigMap configMap = response.bodyAsJsonObject().mapTo(ConfigMap.class);
                         if (configMap == null) {
                             LOGGER.error("Unable to retrieve configmap {} from namespace {}", configmapName, namespace);
-                            return null;
+                            return Maybe.empty();
                         } else {
-                            return configMap;
+                            return Maybe.just(configMap);
                         }
                     }
                 }

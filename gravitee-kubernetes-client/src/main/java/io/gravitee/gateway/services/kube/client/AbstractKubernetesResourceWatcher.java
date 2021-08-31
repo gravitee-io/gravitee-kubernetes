@@ -27,10 +27,11 @@ import io.vertx.core.http.WebSocketConnectOptions;
 import io.vertx.core.net.PemTrustOptions;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.http.HttpClient;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Predicate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 
 /**
  * @author Kamiel Ahmadpour (kamiel.ahmadpour at graviteesource.com)
@@ -41,9 +42,9 @@ public abstract class AbstractKubernetesResourceWatcher implements KubernetesRes
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractKubernetesResourceWatcher.class);
 
-    private final Vertx vertx;
-    private final KubernetesClient kubernetesClient;
-    private final KubernetesConfig config;
+    protected final Vertx vertx;
+    protected final KubernetesClient kubernetesClient;
+    protected final KubernetesConfig config;
 
     protected AbstractKubernetesResourceWatcher(Vertx vertx, KubernetesClient kubernetesClient, KubernetesConfig kubernetesConfig) {
         this.vertx = vertx;
@@ -78,7 +79,7 @@ public abstract class AbstractKubernetesResourceWatcher implements KubernetesRes
                     );
                 }
             )
-            .doOnError(throwable -> LOGGER.error("Unable to retrieve Kubernetes config maps", throwable))
+            .doOnError(throwable -> LOGGER.error("Unable to get the last resource version", throwable))
             .subscribe();
     }
 
@@ -89,9 +90,12 @@ public abstract class AbstractKubernetesResourceWatcher implements KubernetesRes
         Predicate<Event> resourceNamePredicate
     ) {
         WebSocketConnectOptions webSocketConnectOptions = new WebSocketConnectOptions();
+        webSocketConnectOptions.setURI(urlPath(namespace, lastResourceVersion));
+        webSocketConnectOptions.setHost(config.getApiServerHost());
+        webSocketConnectOptions.setPort(config.getApiServerPort());
+        webSocketConnectOptions.setSsl(true);
         webSocketConnectOptions.addHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
         webSocketConnectOptions.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + config.getServiceAccountToken());
-        webSocketConnectOptions.setURI(urlPath(namespace, lastResourceVersion));
 
         client
             .rxWebSocket(webSocketConnectOptions)
@@ -106,7 +110,10 @@ public abstract class AbstractKubernetesResourceWatcher implements KubernetesRes
                         }
                     )
             )
-            .doOnError(throwable -> LOGGER.error("Error connection got Kubernetes web socket", throwable))
+            .doOnError(
+                throwable ->
+                    LOGGER.error("Error connecting host {}, port {}", config.getApiServerHost(), config.getApiServerPort(), throwable)
+            )
             .subscribe();
 
         return client;
@@ -131,14 +138,5 @@ public abstract class AbstractKubernetesResourceWatcher implements KubernetesRes
             .setProtocolVersion(HttpVersion.HTTP_2)
             .setHttp2ClearTextUpgrade(false)
             .setSsl(config.useSSL());
-    }
-
-    // property methods
-    public KubernetesClient getKubernetesClient() {
-        return kubernetesClient;
-    }
-
-    public KubernetesConfig getConfig() {
-        return config;
     }
 }
