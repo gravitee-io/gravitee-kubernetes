@@ -21,7 +21,6 @@ import io.gravitee.gateway.services.kube.client.config.KubernetesConfig;
 import io.gravitee.gateway.services.kube.client.model.v1.Event;
 import io.reactivex.Observable;
 import io.reactivex.Single;
-import io.reactivex.disposables.Disposable;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.WebSocketConnectOptions;
@@ -44,13 +43,14 @@ public abstract class AbstractKubernetesResourceWatcher implements KubernetesRes
     protected final Vertx vertx;
     protected final KubernetesClient kubernetesClient;
     protected final KubernetesConfig config;
+    protected final HttpClient httpClient;
     protected boolean stop = false;
-    private HttpClient httpClient;
 
     protected AbstractKubernetesResourceWatcher(Vertx vertx, KubernetesClient kubernetesClient, KubernetesConfig kubernetesConfig) {
         this.vertx = vertx;
         this.kubernetesClient = kubernetesClient;
         this.config = kubernetesConfig;
+        this.httpClient = vertx.createHttpClient(getHttpClientOptions());
     }
 
     @Override
@@ -61,32 +61,22 @@ public abstract class AbstractKubernetesResourceWatcher implements KubernetesRes
     @Override
     public Observable<Event> watch(String namespace, String fieldSelector) {
         Assert.notNull(namespace, "Namespace can't not null");
+        return watch(namespace, fieldSelector, 0);
+    }
 
+    private Observable<Event> watch(String namespace, String fieldSelector, long id) {
         if (stop) {
             LOGGER.info("Kubernetes resource watcher is stopped.");
+            if (id != 0) {
+                vertx.cancelTimer(id);
+            }
             return Observable.empty();
         }
 
-        return Observable.create(
-            emitter ->
-                retrieveLastResourceVersion(namespace)
-                    .doOnSuccess(
-                        lrv -> {
-                            httpClient = vertx.createHttpClient(getHttpClientOptions());
-                            Disposable disposable = fetchEvents(namespace, lrv, fieldSelector).forEach(emitter::onNext);
-
-                            vertx.setTimer(
-                                config.getWebsocketTimeout(),
-                                l -> {
-                                    disposable.dispose();
-                                    watch(namespace, fieldSelector).forEach(emitter::onNext);
-                                }
-                            );
-                        }
-                    )
-                    .doOnError(throwable -> LOGGER.error("Unable to get the last resource version", throwable))
-                    .subscribe()
-        );
+        return retrieveLastResourceVersion(namespace)
+            .flatMapObservable(lrv -> fetchEvents(namespace, lrv, fieldSelector))
+            .doOnSubscribe(disposable -> vertx.setPeriodic(config.getWebsocketTimeout(), l -> watch(namespace, fieldSelector, l)))
+            .doOnError(throwable -> LOGGER.error("Unable to get the last resource version", throwable));
     }
 
     @Override
@@ -123,6 +113,12 @@ public abstract class AbstractKubernetesResourceWatcher implements KubernetesRes
                                 }
 
                                 return Observable.just(response.toJsonObject().mapTo(Event.class));
+                            }
+                        )
+                        .doFinally(
+                            () -> {
+                                LOGGER.debug("Close websocket connection.");
+                                websocket.close();
                             }
                         )
             );
