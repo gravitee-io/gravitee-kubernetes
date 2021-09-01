@@ -15,13 +15,18 @@
  */
 package io.gravitee.gateway.services.kube.client;
 
+import io.gravitee.gateway.services.kube.client.model.v1.Event;
+import io.reactivex.Observable;
+
 /**
  * @author Kamiel Ahmadpour (kamiel.ahmadpour at graviteesource.com)
  * @author GraviteeSource Team
  * @since 3.9.11
  */
 public interface KubernetesResourceWatcher {
-    void watch(String namespace);
-    void watch(String namespace, String fieldSelector);
+    Observable<Event> watch(String namespace);
+
+    Observable<Event> watch(String namespace, String fieldSelector);
+
     void stop();
 }

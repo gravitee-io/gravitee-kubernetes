@@ -19,7 +19,9 @@ import io.gravitee.common.http.HttpHeaders;
 import io.gravitee.common.http.MediaType;
 import io.gravitee.gateway.services.kube.client.config.KubernetesConfig;
 import io.gravitee.gateway.services.kube.client.model.v1.Event;
+import io.reactivex.Observable;
 import io.reactivex.Single;
+import io.reactivex.disposables.Disposable;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.WebSocketConnectOptions;
@@ -52,36 +54,39 @@ public abstract class AbstractKubernetesResourceWatcher implements KubernetesRes
     }
 
     @Override
-    public void watch(String namespace) {
-        watch(namespace, ""); // doesn't filter anything
+    public Observable<Event> watch(String namespace) {
+        return watch(namespace, ""); // doesn't filter anything
     }
 
     @Override
-    public void watch(String namespace, String fieldSelector) {
+    public Observable<Event> watch(String namespace, String fieldSelector) {
         Assert.notNull(namespace, "Namespace can't not null");
 
         if (stop) {
             LOGGER.info("Kubernetes resource watcher is stopped.");
-            httpClient.close();
-            return;
+            return Observable.empty();
         }
 
-        retrieveLastResourceVersion(namespace)
-            .doOnSuccess(
-                lrv -> {
-                    httpClient = vertx.createHttpClient(getHttpClientOptions());
-                    fetchEvents(namespace, lrv, fieldSelector);
-                    vertx.setTimer(
-                        config.getWebsocketTimeout(),
-                        l -> {
-                            httpClient.close();
-                            watch(namespace, fieldSelector);
+        return Observable.create(
+            emitter ->
+                retrieveLastResourceVersion(namespace)
+                    .doOnSuccess(
+                        lrv -> {
+                            httpClient = vertx.createHttpClient(getHttpClientOptions());
+                            Disposable disposable = fetchEvents(namespace, lrv, fieldSelector).forEach(emitter::onNext);
+
+                            vertx.setTimer(
+                                config.getWebsocketTimeout(),
+                                l -> {
+                                    disposable.dispose();
+                                    watch(namespace, fieldSelector).forEach(emitter::onNext);
+                                }
+                            );
                         }
-                    );
-                }
-            )
-            .doOnError(throwable -> LOGGER.error("Unable to get the last resource version", throwable))
-            .subscribe();
+                    )
+                    .doOnError(throwable -> LOGGER.error("Unable to get the last resource version", throwable))
+                    .subscribe()
+        );
     }
 
     @Override
@@ -89,7 +94,7 @@ public abstract class AbstractKubernetesResourceWatcher implements KubernetesRes
         this.stop = true;
     }
 
-    private void fetchEvents(String namespace, String lastResourceVersion, String fieldSelector) {
+    private Observable<Event> fetchEvents(String namespace, String lastResourceVersion, String fieldSelector) {
         if (fieldSelector == null) {
             LOGGER.warn("Invalid fieldSelector value! [null] It will be ignored...");
             fieldSelector = "";
@@ -103,34 +108,29 @@ public abstract class AbstractKubernetesResourceWatcher implements KubernetesRes
         webSocketConnectOptions.addHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
         webSocketConnectOptions.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + config.getServiceAccountToken());
 
-        httpClient
+        return httpClient
             .rxWebSocket(webSocketConnectOptions)
-            .doOnSuccess(
+            .flatMapObservable(
                 websocket ->
-                    websocket.handler(
-                        response -> {
-                            if (stop) {
-                                LOGGER.info("Stop Kubernetes resource watcher.");
-                                httpClient.close();
-                                return;
+                    websocket
+                        .toObservable()
+                        .flatMap(
+                            response -> {
+                                if (stop) {
+                                    LOGGER.info("Stop Kubernetes resource watcher.");
+                                    websocket.close();
+                                    return Observable.empty();
+                                }
+
+                                return Observable.just(response.toJsonObject().mapTo(Event.class));
                             }
-                            Event event = response.toJsonObject().mapTo(Event.class);
-                            eventReceived(event);
-                        }
-                    )
-            )
-            .doOnError(
-                throwable ->
-                    LOGGER.error("Error connecting host {}, port {}", config.getApiServerHost(), config.getApiServerPort(), throwable)
-            )
-            .subscribe();
+                        )
+            );
     }
 
     public abstract String urlPath(String namespace, String lastResourceVersion, String fieldSelector);
 
     public abstract Single<String> retrieveLastResourceVersion(String namespace);
-
-    public abstract void eventReceived(Event event);
 
     protected HttpClientOptions getHttpClientOptions() {
         PemTrustOptions trustOptions = new PemTrustOptions();
