@@ -15,9 +15,6 @@
  */
 package io.gravitee.gateway.services.kube.client;
 
-import io.gravitee.gateway.services.kube.client.model.v1.Event;
-import java.util.function.Predicate;
-
 /**
  * @author Kamiel Ahmadpour (kamiel.ahmadpour at graviteesource.com)
  * @author GraviteeSource Team
@@ -25,6 +22,6 @@ import java.util.function.Predicate;
  */
 public interface KubernetesResourceWatcher {
     void watch(String namespace);
-
-    void watch(String namespace, Predicate<Event> resourceNamePredicate);
+    void watch(String namespace, String fieldSelector);
+    void stop();
 }

@@ -88,4 +88,22 @@ public class SecretList {
     public void setMetadata(ListMeta metadata) {
         this.metadata = metadata;
     }
+
+    @Override
+    public String toString() {
+        return (
+            "SecretList{" +
+            "apiVersion='" +
+            apiVersion +
+            '\'' +
+            ", items=" +
+            items +
+            ", kind='" +
+            kind +
+            '\'' +
+            ", metadata=" +
+            metadata +
+            '}'
+        );
+    }
 }

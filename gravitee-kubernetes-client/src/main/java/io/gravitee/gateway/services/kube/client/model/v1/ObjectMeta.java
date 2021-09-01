@@ -212,4 +212,49 @@ public class ObjectMeta {
     public void setUid(String uid) {
         this.uid = uid;
     }
+
+    @Override
+    public String toString() {
+        return (
+            "ObjectMeta{" +
+            "annotations=" +
+            annotations +
+            ", clusterName='" +
+            clusterName +
+            '\'' +
+            ", creationTimestamp='" +
+            creationTimestamp +
+            '\'' +
+            ", deletionGracePeriodSeconds=" +
+            deletionGracePeriodSeconds +
+            ", deletionTimestamp='" +
+            deletionTimestamp +
+            '\'' +
+            ", finalizers=" +
+            finalizers +
+            ", generateName='" +
+            generateName +
+            '\'' +
+            ", generation=" +
+            generation +
+            ", labels=" +
+            labels +
+            ", name='" +
+            name +
+            '\'' +
+            ", namespace='" +
+            namespace +
+            '\'' +
+            ", resourceVersion='" +
+            resourceVersion +
+            '\'' +
+            ", selfLink='" +
+            selfLink +
+            '\'' +
+            ", uid='" +
+            uid +
+            '\'' +
+            '}'
+        );
+    }
 }

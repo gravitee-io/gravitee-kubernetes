@@ -112,4 +112,29 @@ public class Secret implements Serializable {
     public void setType(String type) {
         this.type = type;
     }
+
+    @Override
+    public String toString() {
+        return (
+            "Secret{" +
+            "apiVersion='" +
+            apiVersion +
+            '\'' +
+            ", data=" +
+            data +
+            ", immutable=" +
+            immutable +
+            ", kind='" +
+            kind +
+            '\'' +
+            ", metadata=" +
+            metadata +
+            ", stringData=" +
+            stringData +
+            ", type='" +
+            type +
+            '\'' +
+            '}'
+        );
+    }
 }

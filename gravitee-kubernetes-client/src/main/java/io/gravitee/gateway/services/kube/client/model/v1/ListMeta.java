@@ -88,4 +88,23 @@ public class ListMeta {
     public void setSelfLink(String selfLink) {
         this.selfLink = selfLink;
     }
+
+    @Override
+    public String toString() {
+        return (
+            "ListMeta{" +
+            "_continue='" +
+            _continue +
+            '\'' +
+            ", remainingItemCount=" +
+            remainingItemCount +
+            ", resourceVersion='" +
+            resourceVersion +
+            '\'' +
+            ", selfLink='" +
+            selfLink +
+            '\'' +
+            '}'
+        );
+    }
 }

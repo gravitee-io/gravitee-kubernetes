@@ -34,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
 
 /**
  * @author Kamiel Ahmadpour (kamiel.ahmadpour at graviteesource.com)
@@ -56,6 +57,8 @@ public class KubernetesClientImpl implements KubernetesClient {
 
     @Override
     public Single<SecretList> secretList(String namespace) {
+        Assert.notNull(namespace, "Namespace can't not null");
+
         return client
             .get(String.format("/api/v1/namespaces/%s/secrets", namespace))
             .putHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
@@ -87,6 +90,9 @@ public class KubernetesClientImpl implements KubernetesClient {
 
     @Override
     public Maybe<Secret> secret(String namespace, String secretName) {
+        Assert.notNull(namespace, "Namespace can't not null");
+        Assert.notNull(secretName, "Resource name can't not null");
+
         return client
             .get(String.format("/api/v1/namespaces/%s/secrets/%s", namespace, secretName))
             .putHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
@@ -119,6 +125,8 @@ public class KubernetesClientImpl implements KubernetesClient {
 
     @Override
     public Single<ConfigMapList> configMapList(String namespace) {
+        Assert.notNull(namespace, "Namespace can't not null");
+
         return client
             .get(String.format("/api/v1/namespaces/%s/configmaps", namespace))
             .putHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
@@ -150,6 +158,9 @@ public class KubernetesClientImpl implements KubernetesClient {
 
     @Override
     public Maybe<ConfigMap> configMap(String namespace, String configmapName) {
+        Assert.notNull(namespace, "Namespace can't not null");
+        Assert.notNull(configmapName, "Resource name can't not null");
+
         return client
             .get(String.format("/api/v1/namespaces/%s/configmaps/%s", namespace, configmapName))
             .putHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)

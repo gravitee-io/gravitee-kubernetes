@@ -103,4 +103,22 @@ public class ConfigMapList {
     public void setMetadata(io.gravitee.gateway.services.kube.client.model.v1.ListMeta metadata) {
         this.metadata = metadata;
     }
+
+    @Override
+    public String toString() {
+        return (
+            "ConfigMapList{" +
+            "apiVersion='" +
+            apiVersion +
+            '\'' +
+            ", items=" +
+            items +
+            ", kind='" +
+            kind +
+            '\'' +
+            ", metadata=" +
+            metadata +
+            '}'
+        );
+    }
 }

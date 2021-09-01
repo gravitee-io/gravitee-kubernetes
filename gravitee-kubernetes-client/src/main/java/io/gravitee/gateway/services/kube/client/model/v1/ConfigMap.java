@@ -124,4 +124,26 @@ public class ConfigMap implements Serializable {
     public void setMetadata(io.gravitee.gateway.services.kube.client.model.v1.ObjectMeta metadata) {
         this.metadata = metadata;
     }
+
+    @Override
+    public String toString() {
+        return (
+            "ConfigMap{" +
+            "apiVersion='" +
+            apiVersion +
+            '\'' +
+            ", binaryData=" +
+            binaryData +
+            ", data=" +
+            data +
+            ", immutable=" +
+            immutable +
+            ", kind='" +
+            kind +
+            '\'' +
+            ", metadata=" +
+            metadata +
+            '}'
+        );
+    }
 }

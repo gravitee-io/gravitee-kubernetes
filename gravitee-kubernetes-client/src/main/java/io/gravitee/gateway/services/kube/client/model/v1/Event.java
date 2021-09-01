@@ -50,4 +50,9 @@ public class Event {
     public void setObject(Object object) {
         this.object = object;
     }
+
+    @Override
+    public String toString() {
+        return "Event{" + "type='" + type + '\'' + ", object=" + object + '}';
+    }
 }

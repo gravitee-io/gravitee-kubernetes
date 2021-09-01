@@ -22,15 +22,13 @@ import io.gravitee.gateway.services.kube.client.model.v1.Event;
 import io.reactivex.Single;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.WebSocketConnectOptions;
 import io.vertx.core.net.PemTrustOptions;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.http.HttpClient;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Predicate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.Assert;
 
 /**
  * @author Kamiel Ahmadpour (kamiel.ahmadpour at graviteesource.com)
@@ -44,6 +42,8 @@ public abstract class AbstractKubernetesResourceWatcher implements KubernetesRes
     protected final Vertx vertx;
     protected final KubernetesClient kubernetesClient;
     protected final KubernetesConfig config;
+    protected boolean stop = false;
+    private HttpClient httpClient;
 
     protected AbstractKubernetesResourceWatcher(Vertx vertx, KubernetesClient kubernetesClient, KubernetesConfig kubernetesConfig) {
         this.vertx = vertx;
@@ -53,27 +53,29 @@ public abstract class AbstractKubernetesResourceWatcher implements KubernetesRes
 
     @Override
     public void watch(String namespace) {
-        watch(namespace, (e -> true)); // doesn't filter anything
+        watch(namespace, ""); // doesn't filter anything
     }
 
     @Override
-    public void watch(String namespace, Predicate<Event> resourceNamePredicate) {
+    public void watch(String namespace, String fieldSelector) {
+        Assert.notNull(namespace, "Namespace can't not null");
+
+        if (stop) {
+            LOGGER.info("Kubernetes resource watcher is stopped.");
+            httpClient.close();
+            return;
+        }
+
         retrieveLastResourceVersion(namespace)
             .doOnSuccess(
                 lrv -> {
-                    AtomicReference<HttpClient> clientAtomicReference = new AtomicReference<>(
-                        fetchEvents(vertx.createHttpClient(getHttpClientOptions()), namespace, lrv, resourceNamePredicate)
-                    );
-                    vertx.setPeriodic(
+                    httpClient = vertx.createHttpClient(getHttpClientOptions());
+                    fetchEvents(namespace, lrv, fieldSelector);
+                    vertx.setTimer(
                         config.getWebsocketTimeout(),
                         l -> {
-                            if (clientAtomicReference.get() != null) {
-                                clientAtomicReference.get().close();
-                            }
-
-                            clientAtomicReference.set(
-                                fetchEvents(vertx.createHttpClient(getHttpClientOptions()), namespace, lrv, resourceNamePredicate)
-                            );
+                            httpClient.close();
+                            watch(namespace, fieldSelector);
                         }
                     );
                 }
@@ -82,30 +84,38 @@ public abstract class AbstractKubernetesResourceWatcher implements KubernetesRes
             .subscribe();
     }
 
-    private HttpClient fetchEvents(
-        HttpClient client,
-        String namespace,
-        String lastResourceVersion,
-        Predicate<Event> resourceNamePredicate
-    ) {
+    @Override
+    public void stop() {
+        this.stop = true;
+    }
+
+    private void fetchEvents(String namespace, String lastResourceVersion, String fieldSelector) {
+        if (fieldSelector == null) {
+            LOGGER.warn("Invalid fieldSelector value! [null] It will be ignored...");
+            fieldSelector = "";
+        }
+
         WebSocketConnectOptions webSocketConnectOptions = new WebSocketConnectOptions();
-        webSocketConnectOptions.setURI(urlPath(namespace, lastResourceVersion));
+        webSocketConnectOptions.setURI(urlPath(namespace, lastResourceVersion, fieldSelector));
         webSocketConnectOptions.setHost(config.getApiServerHost());
         webSocketConnectOptions.setPort(config.getApiServerPort());
         webSocketConnectOptions.setSsl(true);
         webSocketConnectOptions.addHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
         webSocketConnectOptions.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + config.getServiceAccountToken());
 
-        client
+        httpClient
             .rxWebSocket(webSocketConnectOptions)
             .doOnSuccess(
                 websocket ->
                     websocket.handler(
                         response -> {
-                            Event event = response.toJsonObject().mapTo(Event.class);
-                            if (resourceNamePredicate.test(event)) {
-                                eventReceived(event);
+                            if (stop) {
+                                LOGGER.info("Stop Kubernetes resource watcher.");
+                                httpClient.close();
+                                return;
                             }
+                            Event event = response.toJsonObject().mapTo(Event.class);
+                            eventReceived(event);
                         }
                     )
             )
@@ -114,11 +124,9 @@ public abstract class AbstractKubernetesResourceWatcher implements KubernetesRes
                     LOGGER.error("Error connecting host {}, port {}", config.getApiServerHost(), config.getApiServerPort(), throwable)
             )
             .subscribe();
-
-        return client;
     }
 
-    public abstract String urlPath(String namespace, String lastResourceVersion);
+    public abstract String urlPath(String namespace, String lastResourceVersion, String fieldSelector);
 
     public abstract Single<String> retrieveLastResourceVersion(String namespace);
 
@@ -134,8 +142,6 @@ public abstract class AbstractKubernetesResourceWatcher implements KubernetesRes
             .setTrustAll(!config.verifyHost())
             .setDefaultHost(config.getApiServerHost())
             .setDefaultPort(config.getApiServerPort())
-            .setProtocolVersion(HttpVersion.HTTP_2)
-            .setHttp2ClearTextUpgrade(false)
             .setSsl(config.useSSL());
     }
 }
