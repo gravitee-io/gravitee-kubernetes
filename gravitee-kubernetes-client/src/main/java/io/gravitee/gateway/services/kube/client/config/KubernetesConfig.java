@@ -44,7 +44,7 @@ public class KubernetesConfig {
     public static final String KUBERNETES_SERVICE_PORT_HTTPS_PROPERTY = "KUBERNETES_SERVICE_PORT_HTTPS";
     public static final String KUBERNETES_SERVICE_ACCOUNT_TOKEN_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/token";
     public static final String KUBERNETES_SERVICE_ACCOUNT_CA_CRT_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt";
-    public static final Long DEFAULT_WEBSOCKET_TIMEOUT = 5 * 1000L;
+    public static final Long DEFAULT_WEBSOCKET_TIMEOUT = 5 * 60 * 1000L;
 
     private String apiServerHost;
     private int apiServerPort;

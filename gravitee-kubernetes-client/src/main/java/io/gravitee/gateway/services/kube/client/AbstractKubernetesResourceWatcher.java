@@ -27,6 +27,9 @@ import io.vertx.core.http.WebSocketConnectOptions;
 import io.vertx.core.net.PemTrustOptions;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.http.HttpClient;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.Assert;
@@ -44,7 +47,7 @@ public abstract class AbstractKubernetesResourceWatcher implements KubernetesRes
     protected final KubernetesClient kubernetesClient;
     protected final KubernetesConfig config;
     protected final HttpClient httpClient;
-    protected boolean stop = false;
+    protected Map<String, Watch> watchMap = new HashMap<>();
 
     protected AbstractKubernetesResourceWatcher(Vertx vertx, KubernetesClient kubernetesClient, KubernetesConfig kubernetesConfig) {
         this.vertx = vertx;
@@ -61,30 +64,43 @@ public abstract class AbstractKubernetesResourceWatcher implements KubernetesRes
     @Override
     public Observable<Event> watch(String namespace, String fieldSelector) {
         Assert.notNull(namespace, "Namespace can't not null");
-        return watch(namespace, fieldSelector, 0);
+        Watch watch = new Watch();
+        watchMap.put(watch.uid, watch);
+
+        return watch(namespace, fieldSelector, watch.uid);
     }
 
-    private Observable<Event> watch(String namespace, String fieldSelector, long id) {
-        if (stop) {
-            LOGGER.info("Kubernetes resource watcher is stopped.");
-            if (id != 0) {
-                vertx.cancelTimer(id);
+    private Observable<Event> watch(String namespace, String fieldSelector, String uid) {
+        if (watchMap.get(uid).stopped) {
+            if (watchMap.get(uid).timerId != 0) {
+                LOGGER.info("Cancel timer for Kubernetes resource watcher {}.", uid);
+                vertx.cancelTimer(watchMap.get(uid).timerId);
             }
             return Observable.empty();
         }
 
         return retrieveLastResourceVersion(namespace)
-            .flatMapObservable(lrv -> fetchEvents(namespace, lrv, fieldSelector))
-            .doOnSubscribe(disposable -> vertx.setPeriodic(config.getWebsocketTimeout(), l -> watch(namespace, fieldSelector, l)))
-            .doOnError(throwable -> LOGGER.error("Unable to get the last resource version", throwable));
+            .flatMapObservable(lrv -> fetchEvents(namespace, lrv, fieldSelector, uid))
+            .doOnSubscribe(
+                disposable ->
+                    vertx.setPeriodic(
+                        config.getWebsocketTimeout(),
+                        l -> {
+                            watchMap.get(uid).timerId = l;
+                            watch(namespace, fieldSelector, uid);
+                        }
+                    )
+            )
+            .doOnError(throwable -> LOGGER.error("Unable to get the last resource version", throwable))
+            .doFinally(() -> watchMap.get(uid).stopped = true);
     }
 
     @Override
     public void stop() {
-        this.stop = true;
+        watchMap.forEach((k, v) -> v.stopped = true);
     }
 
-    private Observable<Event> fetchEvents(String namespace, String lastResourceVersion, String fieldSelector) {
+    private Observable<Event> fetchEvents(String namespace, String lastResourceVersion, String fieldSelector, String uid) {
         if (fieldSelector == null) {
             LOGGER.warn("Invalid fieldSelector value! [null] It will be ignored...");
             fieldSelector = "";
@@ -106,8 +122,8 @@ public abstract class AbstractKubernetesResourceWatcher implements KubernetesRes
                         .toObservable()
                         .flatMap(
                             response -> {
-                                if (stop) {
-                                    LOGGER.info("Stop Kubernetes resource watcher.");
+                                if (watchMap.get(uid).stopped) {
+                                    LOGGER.info("Stop Kubernetes resource watcher {}.", uid);
                                     websocket.close();
                                     return Observable.empty();
                                 }
@@ -139,5 +155,17 @@ public abstract class AbstractKubernetesResourceWatcher implements KubernetesRes
             .setDefaultHost(config.getApiServerHost())
             .setDefaultPort(config.getApiServerPort())
             .setSsl(config.useSSL());
+    }
+
+    private static class Watch {
+
+        private boolean stopped;
+        private final String uid;
+        private long timerId;
+
+        public Watch() {
+            this.stopped = false;
+            this.uid = UUID.randomUUID().toString();
+        }
     }
 }
