@@ -42,15 +42,15 @@ import org.springframework.util.Assert;
  * @since 3.9.11
  */
 @Component
-public class KubernetesClientImpl implements KubernetesClient {
+public class KubernetesClientV1Impl implements KubernetesClient {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(KubernetesClientImpl.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(KubernetesClientV1Impl.class);
 
     private final WebClient client;
     private final KubernetesConfig config;
 
     @Autowired
-    public KubernetesClientImpl(Vertx vertx, KubernetesConfig kubernetesConfig) {
+    public KubernetesClientV1Impl(Vertx vertx, KubernetesConfig kubernetesConfig) {
         this.config = kubernetesConfig;
         this.client = WebClient.create(vertx, getHttpClientOptions());
     }

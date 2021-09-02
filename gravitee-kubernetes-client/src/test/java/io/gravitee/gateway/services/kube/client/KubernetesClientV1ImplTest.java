@@ -39,7 +39,7 @@ import org.junit.runner.RunWith;
  * @since 3.9.11
  */
 @RunWith(VertxUnitRunner.class)
-public class KubernetesClientImplTest {
+public class KubernetesClientV1ImplTest {
 
     protected Vertx vertx = Vertx.vertx();
     protected KubernetesMockServer server;
@@ -97,7 +97,7 @@ public class KubernetesClientImplTest {
 
         server.init();
 
-        kubernetesClient = new KubernetesClientImpl(vertx, config(server.createClient()));
+        kubernetesClient = new KubernetesClientV1Impl(vertx, config(server.createClient()));
     }
 
     @After
