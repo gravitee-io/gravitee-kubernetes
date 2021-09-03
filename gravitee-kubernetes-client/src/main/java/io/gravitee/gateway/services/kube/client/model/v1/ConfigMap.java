@@ -21,8 +21,6 @@ import java.io.Serializable;
 import java.util.Map;
 
 /**
- * Represent Kubernetes metadata
- *
  * @author Kamiel Ahmadpour (kamiel.ahmadpour at graviteesource.com)
  * @author GraviteeSource Team
  * @since 3.9.11

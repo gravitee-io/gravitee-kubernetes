@@ -20,8 +20,6 @@ import java.io.Serializable;
 import java.util.Map;
 
 /**
- * Represent Kubernetes secret
- *
  * @author Kamiel Ahmadpour (kamiel.ahmadpour at graviteesource.com)
  * @author GraviteeSource Team
  * @since 3.9.11

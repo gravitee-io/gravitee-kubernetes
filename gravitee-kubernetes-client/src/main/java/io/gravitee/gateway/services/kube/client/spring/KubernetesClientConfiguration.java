@@ -23,13 +23,14 @@ import org.springframework.context.annotation.Configuration;
 /**
  * @author Kamiel Ahmadpour (kamiel.ahmadpour at graviteesource.com)
  * @author GraviteeSource Team
+ * @since 3.9.11
  */
 @Configuration
 @ComponentScan(basePackages = { "io.gravitee.gateway.services.kube.client" })
 public class KubernetesClientConfiguration {
 
     @Bean
-    public KubernetesConfig provideKubeClient() {
+    public KubernetesConfig kubernetesConfig() {
         return new KubernetesConfig();
     }
 }

@@ -18,6 +18,11 @@ package io.gravitee.gateway.services.kube.client.model.v1;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * @author Kamiel Ahmadpour (kamiel.ahmadpour at graviteesource.com)
+ * @author GraviteeSource Team
+ * @since 3.9.11
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ListMeta {
 

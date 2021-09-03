@@ -20,6 +20,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * @author Kamiel Ahmadpour (kamiel.ahmadpour at graviteesource.com)
+ * @author GraviteeSource Team
+ * @since 3.9.11
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ConfigMapList {
 
