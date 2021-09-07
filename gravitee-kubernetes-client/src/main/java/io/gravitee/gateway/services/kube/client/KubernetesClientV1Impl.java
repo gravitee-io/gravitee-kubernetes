@@ -57,12 +57,12 @@ public class KubernetesClientV1Impl implements KubernetesClient {
 
     @Override
     public Single<SecretList> secretList(String namespace) {
-        Assert.notNull(namespace, "Namespace can't not null");
+        Assert.notNull(namespace, "Namespace can't be null");
 
         return client
             .get(String.format("/api/v1/namespaces/%s/secrets", namespace))
             .putHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
-            .putHeader(HttpHeaders.ACCEPT, "Bearer " + config.getServiceAccountToken())
+            .putHeader(HttpHeaders.ACCEPT, "Bearer " + config.getAccessToken())
             .rxSend()
             .map(
                 response -> {
@@ -90,13 +90,13 @@ public class KubernetesClientV1Impl implements KubernetesClient {
 
     @Override
     public Maybe<Secret> secret(String namespace, String secretName) {
-        Assert.notNull(namespace, "Namespace can't not null");
-        Assert.notNull(secretName, "Resource name can't not null");
+        Assert.notNull(namespace, "Namespace can't be null");
+        Assert.notNull(secretName, "Resource name can't be null");
 
         return client
             .get(String.format("/api/v1/namespaces/%s/secrets/%s", namespace, secretName))
             .putHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
-            .bearerTokenAuthentication(config.getServiceAccountToken())
+            .bearerTokenAuthentication(config.getAccessToken())
             .rxSend()
             .toMaybe()
             .flatMap(
@@ -125,12 +125,12 @@ public class KubernetesClientV1Impl implements KubernetesClient {
 
     @Override
     public Single<ConfigMapList> configMapList(String namespace) {
-        Assert.notNull(namespace, "Namespace can't not null");
+        Assert.notNull(namespace, "Namespace can't be null");
 
         return client
             .get(String.format("/api/v1/namespaces/%s/configmaps", namespace))
             .putHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
-            .bearerTokenAuthentication(config.getServiceAccountToken())
+            .bearerTokenAuthentication(config.getAccessToken())
             .rxSend()
             .map(
                 response -> {
@@ -158,13 +158,13 @@ public class KubernetesClientV1Impl implements KubernetesClient {
 
     @Override
     public Maybe<ConfigMap> configMap(String namespace, String configmapName) {
-        Assert.notNull(namespace, "Namespace can't not null");
-        Assert.notNull(configmapName, "Resource name can't not null");
+        Assert.notNull(namespace, "Namespace can't be null");
+        Assert.notNull(configmapName, "Resource name can't be null");
 
         return client
             .get(String.format("/api/v1/namespaces/%s/configmaps/%s", namespace, configmapName))
             .putHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
-            .bearerTokenAuthentication(config.getServiceAccountToken())
+            .bearerTokenAuthentication(config.getAccessToken())
             .rxSend()
             .toMaybe()
             .flatMap(

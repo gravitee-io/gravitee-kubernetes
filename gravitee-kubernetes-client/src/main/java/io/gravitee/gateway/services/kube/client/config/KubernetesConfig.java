@@ -15,18 +15,17 @@
  */
 package io.gravitee.gateway.services.kube.client.config;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import io.gravitee.gateway.services.kube.client.model.config.*;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.io.StringWriter;
 import java.nio.file.Files;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
+import java.util.Base64;
+import java.util.List;
+import java.util.Locale;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
@@ -44,6 +43,7 @@ public class KubernetesConfig {
     public static final String KUBERNETES_SERVICE_PORT_HTTPS_PROPERTY = "KUBERNETES_SERVICE_PORT_HTTPS";
     public static final String KUBERNETES_SERVICE_ACCOUNT_TOKEN_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/token";
     public static final String KUBERNETES_SERVICE_ACCOUNT_CA_CRT_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt";
+    public static final String KUBERNETES_KUBECONFIG_FILE = "kubeconfig";
     public static final Long DEFAULT_WEBSOCKET_TIMEOUT = 5 * 60 * 1000L;
 
     private String apiServerHost;
@@ -51,38 +51,32 @@ public class KubernetesConfig {
     private String caCertData;
     private boolean verifyHost = true;
     private boolean useSSL = true;
-    private String serviceAccountToken;
+    private String accessToken;
     private long websocketTimeout = DEFAULT_WEBSOCKET_TIMEOUT;
 
+    private String masterUrl;
+    private String apiVersion = "v1";
+    private String clientCertData;
+    private String clientKeyData;
+    private File file;
+    private String username;
+    private String password;
+
     public KubernetesConfig() {
-        loadApiServerInfo();
-        loadKubernetesCaFile();
-        loadServiceAccountToken();
+        if (!tryKubeConfig() && !tryServiceAccount()) {
+            LOGGER.error("Unable to configure Kubernetes Config. No KubeConfig or Service account is found");
+        }
     }
 
-    public KubernetesConfig(
-        String apiServerHost,
-        int apiServerPort,
-        String caCertData,
-        boolean verifyHost,
-        boolean useSSL,
-        String serviceAccountToken,
-        long websocketTimeout
-    ) {
-        this.apiServerHost = apiServerHost;
-        this.apiServerPort = apiServerPort;
-        this.caCertData = caCertData;
-        this.verifyHost = verifyHost;
-        this.useSSL = useSSL;
-        this.serviceAccountToken = serviceAccountToken;
-        this.websocketTimeout = websocketTimeout;
+    boolean tryServiceAccount() {
+        return loadApiServerInfo() && loadKubernetesCaFile() && loadServiceAccountToken();
     }
 
     /**
      * Find the Kubernetes API Server HOST, PORT from within the pod
      */
-    private void loadApiServerInfo() {
-        LOGGER.debug("Trying to configure client from service account...");
+    private boolean loadApiServerInfo() {
+        LOGGER.debug("Trying to configure client using service account...");
         String host = getSystemPropertyOrEnvVar(KUBERNETES_SERVICE_HOST_PROPERTY, null);
         String port = getSystemPropertyOrEnvVar(KUBERNETES_SERVICE_PORT_HTTPS_PROPERTY, null);
 
@@ -91,20 +85,23 @@ public class KubernetesConfig {
 
             setApiServerHost(host);
             setApiServerPort(Integer.parseInt(port));
+            return true;
         } else {
             LOGGER.error("Unable to resolve the API Server URL");
+            return false;
         }
     }
 
     /**
      * Load the Kubernetes CA from within the pod
      */
-    private void loadKubernetesCaFile() {
+    private boolean loadKubernetesCaFile() {
         try {
             boolean serviceAccountCaCertExists = Files.isRegularFile(new File(KUBERNETES_SERVICE_ACCOUNT_CA_CRT_PATH).toPath());
             if (serviceAccountCaCertExists) {
                 LOGGER.debug("Found service account ca cert at: [{}]", KUBERNETES_SERVICE_ACCOUNT_CA_CRT_PATH);
                 this.setCaCertData(new String(Files.readAllBytes(new File(KUBERNETES_SERVICE_ACCOUNT_CA_CRT_PATH).toPath())));
+                return true;
             } else {
                 LOGGER.error("Did not find service account ca cert at: [{}]", KUBERNETES_SERVICE_ACCOUNT_CA_CRT_PATH);
             }
@@ -112,21 +109,68 @@ public class KubernetesConfig {
             // No CA file available...
             LOGGER.error("Error reading Kubernetes CA file from: [{}].", KUBERNETES_SERVICE_ACCOUNT_TOKEN_PATH, e);
         }
+
+        return false;
     }
 
     /**
      * Load the Kubernetes Service account from within the pod
      */
-    private void loadServiceAccountToken() {
+    private boolean loadServiceAccountToken() {
         try {
-            String serviceTokenCandidate = new String(Files.readAllBytes(new File(KUBERNETES_SERVICE_ACCOUNT_TOKEN_PATH).toPath()));
-            LOGGER.debug("Found service account token at: [" + KUBERNETES_SERVICE_ACCOUNT_TOKEN_PATH + "].");
-
-            this.setServiceAccountToken(serviceTokenCandidate);
+            boolean serviceAccountAccessTokenExists = Files.isRegularFile(new File(KUBERNETES_SERVICE_ACCOUNT_TOKEN_PATH).toPath());
+            if (serviceAccountAccessTokenExists) {
+                LOGGER.debug("Found service account token at: [" + KUBERNETES_SERVICE_ACCOUNT_TOKEN_PATH + "].");
+                this.setAccessToken(new String(Files.readAllBytes(new File(KUBERNETES_SERVICE_ACCOUNT_TOKEN_PATH).toPath())));
+                return true;
+            }
         } catch (IOException e) {
             // No service account token available...
             LOGGER.error("Error reading service account token from: [{}].", KUBERNETES_SERVICE_ACCOUNT_TOKEN_PATH, e);
         }
+
+        return false;
+    }
+
+    public boolean tryKubeConfig() {
+        LOGGER.debug("Trying to configure client from Kubernetes config...");
+        File kubeConfigFile = new File(getKubeConfigFilename());
+        if (!kubeConfigFile.isFile()) {
+            LOGGER.debug("Did not find Kubernetes config at: [{}]. Ignoring.", kubeConfigFile.getPath());
+            return false;
+        }
+        LOGGER.debug("Found for Kubernetes config at: [{}].", kubeConfigFile.getPath());
+        String kubeConfigContents = getKubeConfigContents(kubeConfigFile);
+        if (kubeConfigContents == null) {
+            return false;
+        }
+        this.file = new File(kubeConfigFile.getPath());
+        return loadFromKubeConfig(kubeConfigContents);
+    }
+
+    private boolean loadFromKubeConfig(String kubeConfigContents) {
+        try {
+            Config config = parseConfigFromString(kubeConfigContents);
+            Context currentContext = getContext(config);
+            Cluster currentCluster = getCluster(config, currentContext);
+            if (currentCluster != null) {
+                this.setMasterUrl(currentCluster.getServer());
+                this.setCaCertData(new String(Base64.getDecoder().decode(currentCluster.getCertificateAuthorityData())));
+                AuthInfo currentAuthInfo = getUserAuthInfo(config, currentContext);
+                if (currentAuthInfo != null) {
+                    this.setClientCertData(currentAuthInfo.getClientCertificateData());
+                    this.setClientKeyData(currentAuthInfo.getClientKeyData());
+                    this.setAccessToken(currentAuthInfo.getToken());
+                    this.setUsername(currentAuthInfo.getUsername());
+                    this.setPassword(currentAuthInfo.getPassword());
+                }
+                return true;
+            }
+        } catch (Exception e) {
+            LOGGER.error("Failed to parse the kube config.", e);
+        }
+
+        return false;
     }
 
     private <T> String getSystemPropertyOrEnvVar(String propertyName, T defaultValue) {
@@ -136,6 +180,136 @@ public class KubernetesConfig {
         }
 
         return System.getenv().getOrDefault(propertyName, (defaultValue != null ? defaultValue.toString() : null));
+    }
+
+    private Config parseConfigFromString(String contents) throws IOException {
+        ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+        return mapper.readValue(contents, Config.class);
+    }
+
+    private NamedContext getCurrentContext(Config config) {
+        String contextName = config.getCurrentContext();
+        if (contextName != null) {
+            List<NamedContext> contextList = config.getContexts();
+            if (contextList != null) {
+                for (NamedContext context : contextList) {
+                    if (contextName.equals(context.getName())) {
+                        return context;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private Context getContext(Config config) {
+        NamedContext currentNamedContext = getCurrentContext(config);
+        if (currentNamedContext != null) {
+            return currentNamedContext.getContext();
+        }
+
+        return null;
+    }
+
+    private Cluster getCluster(Config config, Context context) {
+        Cluster cluster = null;
+        if (config != null && context != null) {
+            String clusterName = context.getCluster();
+            if (clusterName != null) {
+                List<NamedCluster> clusters = config.getClusters();
+                if (clusters != null) {
+                    cluster =
+                        clusters.stream().filter(c -> c.getName().equals(clusterName)).findAny().map(NamedCluster::getCluster).orElse(null);
+                }
+            }
+        }
+        return cluster;
+    }
+
+    private AuthInfo getUserAuthInfo(Config config, Context context) {
+        AuthInfo authInfo = null;
+        if (config != null && context != null) {
+            String user = context.getUser();
+            if (user != null) {
+                List<NamedAuthInfo> users = config.getUsers();
+                if (users != null) {
+                    authInfo = users.stream().filter(u -> u.getName().equals(user)).findAny().map(NamedAuthInfo::getUser).orElse(null);
+                }
+            }
+        }
+        return authInfo;
+    }
+
+    private String getKubeConfigContents(File kubeConfigFile) {
+        try (FileReader reader = new FileReader(kubeConfigFile); StringWriter writer = new StringWriter()) {
+            char[] buffer = new char[8192];
+            int len;
+            for (;;) {
+                len = reader.read(buffer);
+                if (len > 0) {
+                    writer.write(buffer, 0, len);
+                } else {
+                    writer.flush();
+                    break;
+                }
+            }
+            return writer.toString();
+        } catch (IOException e) {
+            LOGGER.error("Could not load Kubernetes config file from {}", kubeConfigFile.getPath(), e);
+            return null;
+        }
+    }
+
+    private String getHomeDir() {
+        String osName = System.getProperty("os.name").toLowerCase(Locale.ROOT);
+        if (osName.startsWith("win")) {
+            String homeDrive = System.getenv("HOMEDRIVE");
+            String homePath = System.getenv("HOMEPATH");
+            if (homeDrive != null && !homeDrive.isEmpty() && homePath != null && !homePath.isEmpty()) {
+                String homeDir = homeDrive + homePath;
+                File f = new File(homeDir);
+                if (f.exists() && f.isDirectory()) {
+                    return homeDir;
+                }
+            }
+            String userProfile = System.getenv("USERPROFILE");
+            if (userProfile != null && !userProfile.isEmpty()) {
+                File f = new File(userProfile);
+                if (f.exists() && f.isDirectory()) {
+                    return userProfile;
+                }
+            }
+        }
+        String home = System.getenv("HOME");
+        if (home != null && !home.isEmpty()) {
+            File f = new File(home);
+            if (f.exists() && f.isDirectory()) {
+                return home;
+            }
+        }
+
+        //Fall back to user.home should never really get here
+        return System.getProperty("user.home", ".");
+    }
+
+    private String getKubeConfigFilename() {
+        String fileName = System
+            .getenv()
+            .getOrDefault(KUBERNETES_KUBECONFIG_FILE, new File(getHomeDir(), ".kube" + File.separator + "config").toString());
+
+        // if system property/env var contains multiple files take the first one based on the environment
+        // we are running in (eg. : for Linux, ; for Windows)
+        String[] fileNames = fileName.split(File.pathSeparator);
+
+        if (fileNames.length > 1) {
+            LOGGER.warn(
+                "Found multiple Kubernetes config files [{}], using the first one: [{}]. If not desired file, please change it by doing `export KUBECONFIG=/path/to/kubeconfig` on Unix systems or `$Env:KUBECONFIG=/path/to/kubeconfig` on Windows.",
+                fileNames,
+                fileNames[0]
+            );
+            fileName = fileNames[0];
+        }
+        return fileName;
     }
 
     // Property methods
@@ -179,12 +353,12 @@ public class KubernetesConfig {
         this.useSSL = useSSL;
     }
 
-    public String getServiceAccountToken() {
-        return serviceAccountToken;
+    public String getAccessToken() {
+        return accessToken;
     }
 
-    public void setServiceAccountToken(String serviceAccountToken) {
-        this.serviceAccountToken = serviceAccountToken;
+    public void setAccessToken(String accessToken) {
+        this.accessToken = accessToken;
     }
 
     public long getWebsocketTimeout() {
@@ -193,5 +367,65 @@ public class KubernetesConfig {
 
     public void setWebsocketTimeout(long websocketTimeout) {
         this.websocketTimeout = websocketTimeout;
+    }
+
+    public String getMasterUrl() {
+        return masterUrl;
+    }
+
+    public void setMasterUrl(String masterUrl) {
+        if (!StringUtils.isEmpty(masterUrl)) {
+            this.masterUrl = masterUrl;
+            this.setApiServerHost(masterUrl.substring(8, masterUrl.lastIndexOf(":"))); // skip initial "https://"
+            this.setApiServerPort(Integer.parseInt(masterUrl.substring(masterUrl.lastIndexOf(':') + 1)));
+        }
+    }
+
+    public String getApiVersion() {
+        return apiVersion;
+    }
+
+    public void setApiVersion(String apiVersion) {
+        this.apiVersion = apiVersion;
+    }
+
+    public String getClientCertData() {
+        return clientCertData;
+    }
+
+    public void setClientCertData(String clientCertData) {
+        this.clientCertData = clientCertData;
+    }
+
+    public String getClientKeyData() {
+        return clientKeyData;
+    }
+
+    public void setClientKeyData(String clientKeyData) {
+        this.clientKeyData = clientKeyData;
+    }
+
+    public File getFile() {
+        return file;
+    }
+
+    public void setFile(File file) {
+        this.file = file;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 }

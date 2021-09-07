@@ -61,6 +61,11 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- Yaml support -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-yaml</artifactId>
+        </dependency>
 
         <!-- Dependencies for tests -->
         <dependency>

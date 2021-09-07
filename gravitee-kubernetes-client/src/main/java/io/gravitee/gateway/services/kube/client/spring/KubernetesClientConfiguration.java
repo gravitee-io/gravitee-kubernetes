@@ -16,6 +16,7 @@
 package io.gravitee.gateway.services.kube.client.spring;
 
 import io.gravitee.gateway.services.kube.client.config.KubernetesConfig;
+import io.vertx.reactivex.core.Vertx;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -32,5 +33,10 @@ public class KubernetesClientConfiguration {
     @Bean
     public KubernetesConfig kubernetesConfig() {
         return new KubernetesConfig();
+    }
+
+    @Bean
+    public Vertx vertx() {
+        return Vertx.vertx();
     }
 }

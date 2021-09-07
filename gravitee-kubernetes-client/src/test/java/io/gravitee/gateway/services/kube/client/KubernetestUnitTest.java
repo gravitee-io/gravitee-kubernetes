@@ -185,7 +185,7 @@ public class KubernetestUnitTest {
         config.setCaCertData(
             new String(Base64.getDecoder().decode(client.getConfiguration().getCaCertData().getBytes(StandardCharsets.UTF_8)))
         );
-        config.setServiceAccountToken(client.getConfiguration().getOauthToken());
+        config.setAccessToken(client.getConfiguration().getOauthToken());
         config.setVerifyHost(false);
 
         return config;

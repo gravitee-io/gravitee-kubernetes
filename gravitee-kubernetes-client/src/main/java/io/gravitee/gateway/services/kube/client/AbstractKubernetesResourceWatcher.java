@@ -63,7 +63,7 @@ public abstract class AbstractKubernetesResourceWatcher implements KubernetesRes
 
     @Override
     public Observable<Event> watch(String namespace, String fieldSelector) {
-        Assert.notNull(namespace, "Namespace can't not null");
+        Assert.notNull(namespace, "Namespace can't be null");
         Watch watch = new Watch();
         watchMap.put(watch.uid, watch);
 
@@ -112,7 +112,7 @@ public abstract class AbstractKubernetesResourceWatcher implements KubernetesRes
         webSocketConnectOptions.setPort(config.getApiServerPort());
         webSocketConnectOptions.setSsl(true);
         webSocketConnectOptions.addHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
-        webSocketConnectOptions.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + config.getServiceAccountToken());
+        webSocketConnectOptions.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + config.getAccessToken());
 
         return httpClient
             .rxWebSocket(webSocketConnectOptions)
