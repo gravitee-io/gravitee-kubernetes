@@ -59,6 +59,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
     public Single<SecretList> secretList(String namespace) {
         Assert.notNull(namespace, "Namespace can't be null");
 
+        LOGGER.debug("Retrieve list of secrets in namespace [{}]", namespace);
         return client
             .get(String.format("/api/v1/namespaces/%s/secrets", namespace))
             .putHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
@@ -93,6 +94,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         Assert.notNull(namespace, "Namespace can't be null");
         Assert.notNull(secretName, "Resource name can't be null");
 
+        LOGGER.debug("Retrieve secret [{}] in namespace [{}]", secretName, namespace);
         return client
             .get(String.format("/api/v1/namespaces/%s/secrets/%s", namespace, secretName))
             .putHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
@@ -127,6 +129,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
     public Single<ConfigMapList> configMapList(String namespace) {
         Assert.notNull(namespace, "Namespace can't be null");
 
+        LOGGER.debug("Retrieve list of configmaps in namespace [{}]", namespace);
         return client
             .get(String.format("/api/v1/namespaces/%s/configmaps", namespace))
             .putHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
@@ -161,6 +164,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         Assert.notNull(namespace, "Namespace can't be null");
         Assert.notNull(configmapName, "Resource name can't be null");
 
+        LOGGER.debug("Retrieve configmap [{}] in namespace [{}]", configmapName, namespace);
         return client
             .get(String.format("/api/v1/namespaces/%s/configmaps/%s", namespace, configmapName))
             .putHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)

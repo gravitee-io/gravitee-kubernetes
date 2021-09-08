@@ -79,6 +79,7 @@ public abstract class AbstractKubernetesResourceWatcher implements KubernetesRes
             return Observable.empty();
         }
 
+        LOGGER.debug("Start watching namespace [{}] with fieldSelector [{}]", namespace, fieldSelector);
         return retrieveLastResourceVersion(namespace)
             .flatMapObservable(lrv -> fetchEvents(namespace, lrv, fieldSelector, uid))
             .doOnSubscribe(
