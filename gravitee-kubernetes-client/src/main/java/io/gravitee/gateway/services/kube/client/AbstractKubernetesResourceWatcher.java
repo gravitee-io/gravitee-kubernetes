@@ -92,8 +92,12 @@ public abstract class AbstractKubernetesResourceWatcher implements KubernetesRes
                         }
                     )
             )
-            .doOnError(throwable -> LOGGER.error("Unable to get the last resource version", throwable))
-            .doFinally(() -> watchMap.get(uid).stopped = true);
+            .doOnError(
+                throwable -> {
+                    LOGGER.error("Unable to get the last resource version", throwable);
+                    watchMap.get(uid).stopped = true;
+                }
+            );
     }
 
     @Override
