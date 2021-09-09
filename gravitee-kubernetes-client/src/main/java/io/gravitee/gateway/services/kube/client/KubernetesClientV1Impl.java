@@ -104,14 +104,14 @@ public class KubernetesClientV1Impl implements KubernetesClient {
             .flatMap(
                 response -> {
                     if (response.statusCode() != 200) {
-                        throw new RuntimeException(
+                        return Maybe.error(new RuntimeException(
                             String.format(
                                 "Unable to retrieve secret %s from namespace %s. error code %d",
                                 secretName,
                                 namespace,
                                 response.statusCode()
                             )
-                        );
+                        ));
                     } else {
                         Secret secret = response.bodyAsJsonObject().mapTo(Secret.class);
                         if (secret == null) {
@@ -174,14 +174,15 @@ public class KubernetesClientV1Impl implements KubernetesClient {
             .flatMap(
                 response -> {
                     if (response.statusCode() != 200) {
-                        throw new RuntimeException(
+                        return Maybe.error(
+                        new RuntimeException(
                             String.format(
                                 "Unable to retrieve configmap %s from namespace %s. error code %d",
                                 configmapName,
                                 namespace,
                                 response.statusCode()
                             )
-                        );
+                        ));
                     } else {
                         ConfigMap configMap = response.bodyAsJsonObject().mapTo(ConfigMap.class);
                         if (configMap == null) {
