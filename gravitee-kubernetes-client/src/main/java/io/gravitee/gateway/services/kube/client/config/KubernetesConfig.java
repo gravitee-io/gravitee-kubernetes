@@ -80,7 +80,7 @@ public class KubernetesConfig {
         String host = getSystemPropertyOrEnvVar(KUBERNETES_SERVICE_HOST_PROPERTY, null);
         String port = getSystemPropertyOrEnvVar(KUBERNETES_SERVICE_PORT_HTTPS_PROPERTY, null);
 
-        if (!StringUtils.isEmpty(host) && !StringUtils.isEmpty(port)) {
+        if (StringUtils.hasText(host) && StringUtils.hasText(port)) {
             LOGGER.debug("Found API Server host and port: {}:{}", host, port);
 
             setApiServerHost(host);
@@ -139,7 +139,7 @@ public class KubernetesConfig {
             LOGGER.debug("Did not find Kubernetes config at: [{}]. Ignoring.", kubeConfigFile.getPath());
             return false;
         }
-        LOGGER.debug("Found for Kubernetes config at: [{}].", kubeConfigFile.getPath());
+        LOGGER.debug("Found Kubernetes config at: [{}].", kubeConfigFile.getPath());
         String kubeConfigContents = getKubeConfigContents(kubeConfigFile);
         if (kubeConfigContents == null) {
             return false;
@@ -175,7 +175,7 @@ public class KubernetesConfig {
 
     private <T> String getSystemPropertyOrEnvVar(String propertyName, T defaultValue) {
         String value = System.getProperty(propertyName);
-        if (StringUtils.isEmpty(value)) {
+        if (StringUtils.hasText(value)) {
             return value;
         }
 
@@ -374,7 +374,7 @@ public class KubernetesConfig {
     }
 
     public void setMasterUrl(String masterUrl) {
-        if (!StringUtils.isEmpty(masterUrl)) {
+        if (StringUtils.hasText(masterUrl)) {
             this.masterUrl = masterUrl;
             this.setApiServerHost(masterUrl.substring(8, masterUrl.lastIndexOf(":"))); // skip initial "https://"
             this.setApiServerPort(Integer.parseInt(masterUrl.substring(masterUrl.lastIndexOf(':') + 1)));
