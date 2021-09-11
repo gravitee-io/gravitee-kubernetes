@@ -17,7 +17,7 @@ package io.gravitee.kubernetes.client.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import io.gravitee.gateway.services.kube.client.model.config.*;
+import io.gravitee.kubernetes.client.model.config.*;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -26,8 +26,6 @@ import java.nio.file.Files;
 import java.util.Base64;
 import java.util.List;
 import java.util.Locale;
-
-import io.gravitee.kubernetes.client.model.config.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;

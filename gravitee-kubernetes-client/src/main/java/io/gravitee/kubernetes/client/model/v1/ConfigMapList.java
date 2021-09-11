@@ -44,12 +44,7 @@ public class ConfigMapList {
      * @param kind
      * @param items
      */
-    public ConfigMapList(
-        String apiVersion,
-        List<ConfigMap> items,
-        String kind,
-        ListMeta metadata
-    ) {
+    public ConfigMapList(String apiVersion, List<ConfigMap> items, String kind, ListMeta metadata) {
         super();
         this.apiVersion = apiVersion;
         this.items = items;
