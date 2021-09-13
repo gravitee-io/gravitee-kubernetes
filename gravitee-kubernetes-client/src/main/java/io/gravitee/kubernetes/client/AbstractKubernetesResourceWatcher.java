@@ -43,11 +43,11 @@ public abstract class AbstractKubernetesResourceWatcher implements KubernetesRes
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractKubernetesResourceWatcher.class);
 
-    protected final Vertx vertx;
-    protected final KubernetesClient kubernetesClient;
-    protected final KubernetesConfig config;
-    protected final HttpClient httpClient;
-    protected Map<String, Watch> watchMap = new HashMap<>();
+    private final Vertx vertx;
+    private final KubernetesClient kubernetesClient;
+    private final KubernetesConfig config;
+    private final HttpClient httpClient;
+    private Map<String, Watch> watchMap = new HashMap<>();
 
     protected AbstractKubernetesResourceWatcher(Vertx vertx, KubernetesClient kubernetesClient, KubernetesConfig kubernetesConfig) {
         this.vertx = vertx;
@@ -75,6 +75,7 @@ public abstract class AbstractKubernetesResourceWatcher implements KubernetesRes
             if (watchMap.get(uid).timerId != 0) {
                 LOGGER.info("Cancel timer for Kubernetes resource watcher {}.", uid);
                 vertx.cancelTimer(watchMap.get(uid).timerId);
+                watchMap.remove(uid);
             }
             return Observable.empty();
         }
@@ -172,5 +173,30 @@ public abstract class AbstractKubernetesResourceWatcher implements KubernetesRes
             this.stopped = false;
             this.uid = UUID.randomUUID().toString();
         }
+    }
+
+    // property methods
+    public Vertx getVertx() {
+        return vertx;
+    }
+
+    public KubernetesClient getKubernetesClient() {
+        return kubernetesClient;
+    }
+
+    public KubernetesConfig getConfig() {
+        return config;
+    }
+
+    public HttpClient getHttpClient() {
+        return httpClient;
+    }
+
+    public Map<String, Watch> getWatchMap() {
+        return watchMap;
+    }
+
+    public void setWatchMap(Map<String, Watch> watchMap) {
+        this.watchMap = watchMap;
     }
 }

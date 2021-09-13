@@ -54,6 +54,6 @@ public class KubernetesSecretV1Watcher extends AbstractKubernetesResourceWatcher
 
     @Override
     public Single<String> retrieveLastResourceVersion(String namespace) {
-        return kubernetesClient.secretList(namespace).map(secretList -> secretList.getMetadata().getResourceVersion());
+        return getKubernetesClient().secretList(namespace).map(secretList -> secretList.getMetadata().getResourceVersion());
     }
 }

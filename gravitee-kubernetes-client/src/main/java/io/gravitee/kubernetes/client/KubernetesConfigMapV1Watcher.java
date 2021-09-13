@@ -54,6 +54,6 @@ public class KubernetesConfigMapV1Watcher extends AbstractKubernetesResourceWatc
 
     @Override
     public Single<String> retrieveLastResourceVersion(String namespace) {
-        return kubernetesClient.configMapList(namespace).map(configMapList -> configMapList.getMetadata().getResourceVersion());
+        return getKubernetesClient().configMapList(namespace).map(configMapList -> configMapList.getMetadata().getResourceVersion());
     }
 }
