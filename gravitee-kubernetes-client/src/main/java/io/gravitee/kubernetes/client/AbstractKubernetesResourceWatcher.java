@@ -17,6 +17,7 @@ package io.gravitee.kubernetes.client;
 
 import io.gravitee.common.http.HttpHeaders;
 import io.gravitee.common.http.MediaType;
+import io.gravitee.common.utils.UUID;
 import io.gravitee.kubernetes.client.config.KubernetesConfig;
 import io.gravitee.kubernetes.client.model.v1.Event;
 import io.reactivex.Observable;
@@ -29,7 +30,6 @@ import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.http.HttpClient;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.Assert;
@@ -171,7 +171,7 @@ public abstract class AbstractKubernetesResourceWatcher implements KubernetesRes
 
         public Watch() {
             this.stopped = false;
-            this.uid = UUID.randomUUID().toString();
+            this.uid = UUID.random().toString();
         }
     }
 
