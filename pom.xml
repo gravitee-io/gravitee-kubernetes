@@ -54,7 +54,7 @@
         <gravitee-node.version>1.11.0</gravitee-node.version>
         <gravitee-gateway.version>3.7.1</gravitee-gateway.version>
         <snakeyaml.version>1.26</snakeyaml.version>
-        <fabric8.version>4.11.1</fabric8.version>
+        <fabric8.version>5.7.0</fabric8.version>
         <rxjava.version>2.2.19</rxjava.version>
         <sonar.skip>true</sonar.skip>
     </properties>
