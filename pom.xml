@@ -45,6 +45,7 @@
     </issueManagement>
 
     <modules>
+        <module>gravitee-kubernetes-client</module>
         <module>gravitee-kubernetes-controller</module>
     </modules>
 
