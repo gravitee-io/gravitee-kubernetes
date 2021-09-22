@@ -27,7 +27,7 @@ import org.springframework.context.annotation.Configuration;
  * @since 3.9.11
  */
 @Configuration
-@ComponentScan(basePackages = { "io.gravitee.gateway.services.kube.client" })
+@ComponentScan(basePackages = { "io.gravitee.kubernetes.client" })
 public class KubernetesClientConfiguration {
 
     @Bean
