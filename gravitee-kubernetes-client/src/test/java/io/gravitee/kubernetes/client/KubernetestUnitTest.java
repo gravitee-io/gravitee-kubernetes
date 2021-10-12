@@ -51,6 +51,8 @@ public class KubernetestUnitTest {
 
         ConfigMap configMap1 = getConfigMap("test", UUID.randomUUID().toString(), "configmap1", configMapData);
         ConfigMap configMap2 = getConfigMap("test", UUID.randomUUID().toString(), "configmap2", configMapData);
+        ConfigMap configMap3 = getConfigMap("test", UUID.randomUUID().toString(), "configmap3", configMapData);
+        ConfigMap configMap4 = getConfigMap("test", UUID.randomUUID().toString(), "configmap4", configMapData);
 
         Map<String, String> secretData = new HashMap<>();
         secretData.put("tls.key", "dHNsLmtleQ==");
@@ -111,8 +113,26 @@ public class KubernetestUnitTest {
             .andReturn(200, new ConfigMapBuilder(configMap1).build())
             .always();
 
-        ConfigMap configMap3 = getConfigMap("test", UUID.randomUUID().toString(), "configmap3", configMapData);
-        ConfigMap configMap4 = getConfigMap("test", UUID.randomUUID().toString(), "configmap4", configMapData);
+        server
+            .expect()
+            .get()
+            .withPath("/api/v1/namespaces/test/configmaps/configmap2")
+            .andReturn(200, new ConfigMapBuilder(configMap2).build())
+            .always();
+        server
+            .expect()
+            .get()
+            .withPath("/api/v1/namespaces/test/configmaps/configmap3")
+            .andReturn(200, new ConfigMapBuilder(configMap3).build())
+            .always();
+        server
+            .expect()
+            .get()
+            .withPath("/api/v1/namespaces/test/configmaps/configmap4")
+            .andReturn(200, new ConfigMapBuilder(configMap4).build())
+            .always();
+
+
         server
             .expect()
             .get()
