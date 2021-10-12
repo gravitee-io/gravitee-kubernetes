@@ -17,6 +17,8 @@ package io.gravitee.kubernetes.client;
 
 import static org.junit.Assert.assertEquals;
 
+import io.gravitee.kubernetes.client.model.v1.ConfigMap;
+import io.gravitee.kubernetes.client.model.v1.ConfigMapEvent;
 import io.gravitee.kubernetes.client.model.v1.Event;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import java.util.ArrayList;
@@ -33,16 +35,13 @@ import org.junit.runner.RunWith;
 @RunWith(VertxUnitRunner.class)
 public class KubernetesConfigMapV1WatcherTest extends KubernetestUnitTest {
 
-    private KubernetesConfigMapV1Watcher configMapV1Watcher;
-
     @Test
     public void watchAllResources() {
-        configMapV1Watcher = new KubernetesConfigMapV1Watcher(vertx, kubernetesClient, kubernetesConfig);
         List<Event> events = new ArrayList<>();
         try {
             CountDownLatch latch = new CountDownLatch(5);
-            configMapV1Watcher
-                .watch("test")
+            kubernetesClient
+                .watch("kube://test/configmap", ConfigMapEvent.class)
                 .doOnNext(
                     event -> {
                         events.add(event);
@@ -62,12 +61,11 @@ public class KubernetesConfigMapV1WatcherTest extends KubernetestUnitTest {
 
     @Test
     public void watchSpecificResource() {
-        configMapV1Watcher = new KubernetesConfigMapV1Watcher(vertx, kubernetesClient, kubernetesConfig);
         List<Event> events = new ArrayList<>();
         try {
             CountDownLatch latch = new CountDownLatch(2);
-            configMapV1Watcher
-                .watch("test", "metadata.name=configmap1")
+            kubernetesClient
+                .watch("kube://test/configmap/configmap1", ConfigMapEvent.class)
                 .doOnNext(
                     event -> {
                         events.add(event);

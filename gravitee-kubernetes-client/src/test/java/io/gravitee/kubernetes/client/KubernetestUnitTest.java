@@ -32,7 +32,6 @@ import org.junit.Before;
 /**
  * @author Kamiel Ahmadpour (kamiel.ahmadpour at graviteesource.com)
  * @author GraviteeSource Team
- * @since
  */
 public class KubernetestUnitTest {
 
@@ -58,6 +57,8 @@ public class KubernetestUnitTest {
         secretData.put("tls.pem", "dHNsLnBlbQ==");
         Secret secret1 = getSecret("test", UUID.randomUUID().toString(), "secret1", secretData);
         Secret secret2 = getSecret("test", UUID.randomUUID().toString(), "secret2", secretData);
+        Secret secret3 = getSecret("test", UUID.randomUUID().toString(), "secret3", secretData);
+        Secret secret4 = getSecret("test", UUID.randomUUID().toString(), "secret4", secretData);
 
         server = new KubernetesMockServer(true);
 
@@ -73,6 +74,24 @@ public class KubernetestUnitTest {
             .get()
             .withPath("/api/v1/namespaces/test/secrets/secret1")
             .andReturn(200, new SecretBuilder(secret1).build())
+            .always();
+        server
+            .expect()
+            .get()
+            .withPath("/api/v1/namespaces/test/secrets/secret2")
+            .andReturn(200, new SecretBuilder(secret2).build())
+            .always();
+        server
+            .expect()
+            .get()
+            .withPath("/api/v1/namespaces/test/secrets/secret3")
+            .andReturn(200, new SecretBuilder(secret3).build())
+            .always();
+        server
+            .expect()
+            .get()
+            .withPath("/api/v1/namespaces/test/secrets/secret4")
+            .andReturn(200, new SecretBuilder(secret4).build())
             .always();
 
         server
@@ -122,14 +141,12 @@ public class KubernetestUnitTest {
             .andUpgradeToWebSocket()
             .open()
             .waitFor(EVENT_WAIT_PERIOD_MS)
-            .andEmit(new WatchEvent(addFakeData(secret2), "MODIFIED"))
+            .andEmit(new WatchEvent(addFakeData(configMap1), "MODIFIED"))
             .waitFor(EVENT_WAIT_PERIOD_MS)
             .andEmit(new WatchEvent(configMap1, "DELETED"))
             .done()
             .once();
 
-        Secret secret3 = getSecret("test", UUID.randomUUID().toString(), "secret3", secretData);
-        Secret secret4 = getSecret("test", UUID.randomUUID().toString(), "secret4", secretData);
         server
             .expect()
             .get()
@@ -153,7 +170,7 @@ public class KubernetestUnitTest {
             .expect()
             .get()
             .withPath(
-                "/api/v1/namespaces/test/secrets?watch=true&allowWatchBookmarks=true&fieldSelector=metadata.name=configmap1&resourceVersion=1234"
+                "/api/v1/namespaces/test/secrets?watch=true&allowWatchBookmarks=true&fieldSelector=metadata.name=secret1&resourceVersion=1234"
             )
             .andUpgradeToWebSocket()
             .open()

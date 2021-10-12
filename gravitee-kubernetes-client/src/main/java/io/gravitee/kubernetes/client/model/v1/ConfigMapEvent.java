@@ -13,20 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.gravitee.kubernetes.client;
-
-import io.gravitee.kubernetes.client.model.v1.Event;
-import io.reactivex.Observable;
+package io.gravitee.kubernetes.client.model.v1;
 
 /**
  * @author Kamiel Ahmadpour (kamiel.ahmadpour at graviteesource.com)
  * @author GraviteeSource Team
- * @since 3.9.11
  */
-public interface KubernetesResourceWatcher {
-    Observable<Event> watch(String namespace);
+public class ConfigMapEvent extends Event {
 
-    Observable<Event> watch(String namespace, String fieldSelector);
+    private ConfigMap data;
 
-    void stop();
+    public ConfigMap getData() {
+        return data;
+    }
+
+    public void setData(ConfigMap data) {
+        this.data = data;
+    }
 }

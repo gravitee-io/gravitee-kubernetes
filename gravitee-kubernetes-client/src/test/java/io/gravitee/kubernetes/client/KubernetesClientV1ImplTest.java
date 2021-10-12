@@ -15,6 +15,8 @@
  */
 package io.gravitee.kubernetes.client;
 
+import io.gravitee.kubernetes.client.model.v1.ConfigMap;
+import io.gravitee.kubernetes.client.model.v1.Secret;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -48,7 +50,7 @@ public class KubernetesClientV1ImplTest extends KubernetestUnitTest {
     public void testSecret(TestContext tc) {
         Async async = tc.async();
         kubernetesClient
-            .secret("test", "secret1")
+            .get("kube://test/secret/secret1", Secret.class)
             .doOnSuccess(
                 secret -> {
                     tc.assertNotNull(secret.getData());
@@ -81,7 +83,7 @@ public class KubernetesClientV1ImplTest extends KubernetestUnitTest {
     public void testConfigMap(TestContext tc) {
         Async async = tc.async();
         kubernetesClient
-            .configMap("test", "configmap1")
+            .get("kube://test/configmap/configmap1", ConfigMap.class)
             .doOnSuccess(
                 configMap -> {
                     tc.assertNotNull(configMap.getData());
