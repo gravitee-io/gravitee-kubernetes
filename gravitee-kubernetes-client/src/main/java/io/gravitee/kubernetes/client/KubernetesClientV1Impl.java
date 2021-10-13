@@ -226,7 +226,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
     }
 
     @Override
-    public <T extends Event> Flowable<T> watch(String location, Class<T> type) {
+    public <T extends Event<?>> Flowable<T> watch(String location, Class<T> type) {
         KubeResource resource = parseLocation(location);
         if (resource == null) {
             return Flowable.empty();
@@ -289,7 +289,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         return Future.succeededFuture();
     }
 
-    private <T extends Event> Observable<T> fetchEvents(
+    private <T extends Event<?>> Observable<T> fetchEvents(
         KubeResource resource,
         String lastResourceVersion,
         String fieldSelector,
@@ -362,7 +362,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         }
     }
 
-    public <T extends Event> Single<String> retrieveLastResourceVersion(String namespace, Class<T> type) {
+    private <T extends Event<?>> Single<String> retrieveLastResourceVersion(String namespace, Class<T> type) {
         if (type.equals(ConfigMapEvent.class)) {
             return configMapList(namespace).map(configMapList -> configMapList.getMetadata().getResourceVersion());
         } else if (type.equals(SecretEvent.class)) {
@@ -372,7 +372,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         return Single.error(new RuntimeException("Unable to determine the resource type " + type));
     }
 
-    public <T> String watcherUrlPath(String namespace, String lastResourceVersion, String fieldSelector, Class<T> type) {
+    private <T> String watcherUrlPath(String namespace, String lastResourceVersion, String fieldSelector, Class<T> type) {
         if (type == null) {
             return null;
         }
@@ -412,6 +412,31 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         return null;
     }
 
+    private HttpClientOptions getHttpClientOptions() {
+        PemTrustOptions trustOptions = new PemTrustOptions();
+        trustOptions.addCertValue(Buffer.buffer(config.getCaCertData()));
+
+        return new HttpClientOptions()
+            .setTrustOptions(trustOptions)
+            .setVerifyHost(config.verifyHost())
+            .setTrustAll(!config.verifyHost())
+            .setDefaultHost(config.getApiServerHost())
+            .setDefaultPort(config.getApiServerPort())
+            .setSsl(config.useSSL());
+    }
+
+    private static class Watch {
+
+        private boolean stopped;
+        private final String location;
+        private long timerId;
+
+        public Watch(String location) {
+            this.stopped = false;
+            this.location = location;
+        }
+    }
+
     private static class KubeResource {
 
         private final String namespace;
@@ -442,31 +467,6 @@ public class KubernetesClientV1Impl implements KubernetesClient {
 
         public String value() {
             return this.value;
-        }
-    }
-
-    private HttpClientOptions getHttpClientOptions() {
-        PemTrustOptions trustOptions = new PemTrustOptions();
-        trustOptions.addCertValue(Buffer.buffer(config.getCaCertData()));
-
-        return new HttpClientOptions()
-            .setTrustOptions(trustOptions)
-            .setVerifyHost(config.verifyHost())
-            .setTrustAll(!config.verifyHost())
-            .setDefaultHost(config.getApiServerHost())
-            .setDefaultPort(config.getApiServerPort())
-            .setSsl(config.useSSL());
-    }
-
-    private static class Watch {
-
-        private boolean stopped;
-        private final String location;
-        private long timerId;
-
-        public Watch(String location) {
-            this.stopped = false;
-            this.location = location;
         }
     }
 }

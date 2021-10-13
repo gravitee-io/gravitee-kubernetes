@@ -56,7 +56,7 @@ public interface KubernetesClient {
      *      kube://default/secret/gravitee-config
      * @return a flowable where element will be pushed at any change.
      */
-    <T extends Event> Flowable<T> watch(String location, Class<T> type);
+    <T extends Event<?>> Flowable<T> watch(String location, Class<T> type);
 
     Future<Void> stop(String location);
 
