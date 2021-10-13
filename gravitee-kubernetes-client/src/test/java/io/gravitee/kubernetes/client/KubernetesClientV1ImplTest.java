@@ -65,6 +65,22 @@ public class KubernetesClientV1ImplTest extends KubernetestUnitTest {
     }
 
     @Test
+    public void retrieveSingleKeyInSecret(TestContext tc) {
+        Async async = tc.async();
+        kubernetesClient
+            .get("kube://test/secret/secret1/tls.key", String.class)
+            .doOnSuccess(
+                tlsKey -> {
+                    tc.assertNotNull(tlsKey);
+                    tc.assertEquals("dHNsLmtleQ==", tlsKey);
+                    async.complete();
+                }
+            )
+            .doOnError(tc::fail)
+            .subscribe();
+    }
+
+    @Test
     public void testConfigMapList(TestContext tc) {
         Async async = tc.async();
         kubernetesClient
@@ -90,6 +106,22 @@ public class KubernetesClientV1ImplTest extends KubernetestUnitTest {
                     tc.assertEquals(2, configMap.getData().size());
                     tc.assertNotNull(configMap.getData().get("host"));
                     tc.assertNotNull(configMap.getData().get("port"));
+                    async.complete();
+                }
+            )
+            .doOnError(tc::fail)
+            .subscribe();
+    }
+
+    @Test
+    public void retrieveSingleKeyInConfigMap(TestContext tc) {
+        Async async = tc.async();
+        kubernetesClient
+            .get("kube://test/configmap/configmap1/host", String.class)
+            .doOnSuccess(
+                host -> {
+                    tc.assertNotNull(host);
+                    tc.assertEquals("localhost", host);
                     async.complete();
                 }
             )

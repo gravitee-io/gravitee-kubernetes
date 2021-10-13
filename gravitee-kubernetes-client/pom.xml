@@ -55,11 +55,6 @@
             <artifactId>vertx-rx-java2</artifactId>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>io.vertx</groupId>
-            <artifactId>vertx-web-client</artifactId>
-            <scope>provided</scope>
-        </dependency>
 
         <!-- Yaml support -->
         <dependency>

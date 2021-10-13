@@ -24,14 +24,15 @@ import io.reactivex.*;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.RequestOptions;
 import io.vertx.core.http.WebSocketConnectOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.PemTrustOptions;
-import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.http.HttpClient;
-import io.vertx.reactivex.ext.consul.Watch;
-import io.vertx.reactivex.ext.web.client.WebClient;
+import io.vertx.reactivex.core.http.HttpClientRequest;
 import java.util.HashMap;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -51,7 +52,6 @@ public class KubernetesClientV1Impl implements KubernetesClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(KubernetesClientV1Impl.class);
 
     private final Vertx vertx;
-    private final WebClient client;
     private final HttpClient httpClient;
     private final KubernetesConfig config;
     private Map<String, Watch> watchMap = new HashMap<>();
@@ -60,7 +60,6 @@ public class KubernetesClientV1Impl implements KubernetesClient {
     public KubernetesClientV1Impl(Vertx vertx, KubernetesConfig kubernetesConfig) {
         this.vertx = vertx;
         this.config = kubernetesConfig;
-        this.client = WebClient.create(vertx, getHttpClientOptions());
         this.httpClient = vertx.createHttpClient(getHttpClientOptions());
     }
 
@@ -69,30 +68,43 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         Assert.notNull(namespace, "Namespace can't be null");
 
         LOGGER.debug("Retrieve list of secrets in namespace [{}]", namespace);
-        return client
-            .get(String.format("/api/v1/namespaces/%s/secrets", namespace))
-            .putHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
-            .bearerTokenAuthentication(config.getAccessToken())
-            .rxSend()
-            .map(
+        RequestOptions requestOptions = new RequestOptions();
+        requestOptions.setMethod(HttpMethod.GET);
+        requestOptions.setURI(String.format("/api/v1/namespaces/%s/secrets", namespace));
+        requestOptions.addHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
+        requestOptions.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + config.getAccessToken());
+        return httpClient
+            .rxRequest(requestOptions)
+            .flatMap(HttpClientRequest::rxSend)
+            .flatMap(
                 response -> {
                     if (response.statusCode() != 200) {
-                        throw new RuntimeException(
-                            String.format(
-                                "Unable to retrieve list of secrets from namespace %s. error code %d",
-                                namespace,
-                                response.statusCode()
+                        return Single.error(
+                            new RuntimeException(
+                                String.format(
+                                    "Unable to retrieve list of secrets from namespace %s. error code %d",
+                                    namespace,
+                                    response.statusCode()
+                                )
                             )
                         );
                     } else {
-                        SecretList secretList = response.bodyAsJsonObject().mapTo(SecretList.class);
-                        if (secretList == null) {
-                            throw new ResourceNotFoundException(
-                                String.format("Unable to retrieve list of secrets from namespace %s", namespace)
+                        return response
+                            .rxBody()
+                            .flatMap(
+                                buffer -> {
+                                    SecretList secretList = buffer.toJsonObject().mapTo(SecretList.class);
+                                    if (secretList == null) {
+                                        return Single.error(
+                                            new ResourceNotFoundException(
+                                                String.format("Unable to retrieve list of secrets from namespace %s", namespace)
+                                            )
+                                        );
+                                    } else {
+                                        return Single.just(secretList);
+                                    }
+                                }
                             );
-                        } else {
-                            return secretList;
-                        }
                     }
                 }
             );
@@ -103,30 +115,43 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         Assert.notNull(namespace, "Namespace can't be null");
 
         LOGGER.debug("Retrieve list of configmaps in namespace [{}]", namespace);
-        return client
-            .get(String.format("/api/v1/namespaces/%s/configmaps", namespace))
-            .putHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
-            .bearerTokenAuthentication(config.getAccessToken())
-            .rxSend()
-            .map(
+        RequestOptions requestOptions = new RequestOptions();
+        requestOptions.setMethod(HttpMethod.GET);
+        requestOptions.setURI(String.format("/api/v1/namespaces/%s/configmaps", namespace));
+        requestOptions.addHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
+        requestOptions.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + config.getAccessToken());
+        return httpClient
+            .rxRequest(requestOptions)
+            .flatMap(HttpClientRequest::rxSend)
+            .flatMap(
                 response -> {
                     if (response.statusCode() != 200) {
-                        throw new RuntimeException(
-                            String.format(
-                                "Unable to retrieve list of configmaps from namespace %s. error code %d",
-                                namespace,
-                                response.statusCode()
+                        return Single.error(
+                            new RuntimeException(
+                                String.format(
+                                    "Unable to retrieve list of configmaps from namespace %s. error code %d",
+                                    namespace,
+                                    response.statusCode()
+                                )
                             )
                         );
                     } else {
-                        ConfigMapList configMapList = response.bodyAsJsonObject().mapTo(ConfigMapList.class);
-                        if (configMapList == null) {
-                            throw new ResourceNotFoundException(
-                                String.format("Unable to retrieve list of configmaps from namespace %s", namespace)
+                        return response
+                            .rxBody()
+                            .flatMap(
+                                buffer -> {
+                                    ConfigMapList configMapList = buffer.toJsonObject().mapTo(ConfigMapList.class);
+                                    if (configMapList == null) {
+                                        return Single.error(
+                                            new ResourceNotFoundException(
+                                                String.format("Unable to retrieve list of configmaps from namespace %s", namespace)
+                                            )
+                                        );
+                                    } else {
+                                        return Single.just(configMapList);
+                                    }
+                                }
                             );
-                        } else {
-                            return configMapList;
-                        }
                     }
                 }
             );
@@ -140,12 +165,14 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         }
 
         LOGGER.debug("Retrieve [{}] in namespace [{}]", resource.type.value, resource.namespace);
-
-        return client
-            .get(generateRequestUri(resource))
-            .putHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
-            .bearerTokenAuthentication(config.getAccessToken())
-            .rxSend()
+        RequestOptions requestOptions = new RequestOptions();
+        requestOptions.setMethod(HttpMethod.GET);
+        requestOptions.setURI(generateRequestUri(resource));
+        requestOptions.addHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
+        requestOptions.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + config.getAccessToken());
+        return httpClient
+            .rxRequest(requestOptions)
+            .flatMap(HttpClientRequest::rxSend)
             .toMaybe()
             .flatMap(
                 response -> {
@@ -162,29 +189,37 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                             )
                         );
                     } else {
-                        T data = null;
-                        if (resource.key == null) {
-                            data = response.bodyAsJsonObject().mapTo(type);
-                        } else {
-                            Object item = response.bodyAsJsonObject().mapTo(type);
-                            if (item instanceof ConfigMap) {
-                                data = (T) ((ConfigMap) item).getData().get(resource.key);
-                            } else if (item instanceof Secret) {
-                                data = (T) ((Secret) item).getData().get(resource.key);
-                            }
-                        }
+                        return response
+                            .rxBody()
+                            .toMaybe()
+                            .flatMap(
+                                buffer -> {
+                                    JsonObject item = buffer.toJsonObject();
+                                    T data = null;
+                                    if (resource.key == null) {
+                                        data = item.mapTo(type);
+                                    } else if (item.getString("kind") != null) {
+                                        String kind = item.getString("kind").toLowerCase();
+                                        if (kind.equals(ResourceType.CONFIGMAP.value)) {
+                                            data = (T) item.mapTo(ConfigMap.class).getData().get(resource.key);
+                                        } else if (kind.equals(ResourceType.SECRET.value())) {
+                                            data = (T) item.mapTo(Secret.class).getData().get(resource.key);
+                                        }
+                                    }
 
-                        if (data == null) {
-                            LOGGER.error(
-                                "Unable to retrieve {} {} from namespace {}",
-                                resource.type.value,
-                                resource.name,
-                                resource.namespace
+                                    if (data == null) {
+                                        LOGGER.error(
+                                            "Unable to retrieve {} {} from namespace {}",
+                                            resource.type.value,
+                                            resource.name,
+                                            resource.namespace
+                                        );
+                                        return Maybe.empty();
+                                    } else {
+                                        return Maybe.just(data);
+                                    }
+                                }
                             );
-                            return Maybe.empty();
-                        } else {
-                            return Maybe.just(data);
-                        }
                     }
                 }
             );
@@ -331,7 +366,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
             }
         }
 
-        String resourceName = properties.length == 3 ? properties[2] : null;
+        String resourceName = properties.length > 2 ? properties[2] : null;
 
         return new KubeResource(properties[0], resourceType, resourceName, key);
     }
@@ -430,11 +465,11 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         }
     }
 
-    private WebClientOptions getHttpClientOptions() {
+    private HttpClientOptions getHttpClientOptions() {
         PemTrustOptions trustOptions = new PemTrustOptions();
         trustOptions.addCertValue(Buffer.buffer(config.getCaCertData()));
 
-        return new WebClientOptions()
+        return new HttpClientOptions()
             .setTrustOptions(trustOptions)
             .setVerifyHost(config.verifyHost())
             .setTrustAll(!config.verifyHost())

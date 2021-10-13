@@ -132,7 +132,6 @@ public class KubernetestUnitTest {
             .andReturn(200, new ConfigMapBuilder(configMap4).build())
             .always();
 
-
         server
             .expect()
             .get()
