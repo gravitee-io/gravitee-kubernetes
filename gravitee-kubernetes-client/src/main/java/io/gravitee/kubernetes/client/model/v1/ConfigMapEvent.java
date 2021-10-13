@@ -19,15 +19,4 @@ package io.gravitee.kubernetes.client.model.v1;
  * @author Kamiel Ahmadpour (kamiel.ahmadpour at graviteesource.com)
  * @author GraviteeSource Team
  */
-public class ConfigMapEvent extends Event {
-
-    private ConfigMap data;
-
-    public ConfigMap getData() {
-        return data;
-    }
-
-    public void setData(ConfigMap data) {
-        this.data = data;
-    }
-}
+public class ConfigMapEvent extends Event<ConfigMap> {}

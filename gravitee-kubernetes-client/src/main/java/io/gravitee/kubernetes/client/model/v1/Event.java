@@ -23,14 +23,14 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  * @since 3.9.11
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Event {
+public class Event<T> {
 
     private String type;
-    private Object object;
+    private T object;
 
     public Event() {}
 
-    public Event(String type, Object object) {
+    public Event(String type, T object) {
         this.type = type;
         this.object = object;
     }
@@ -43,11 +43,11 @@ public class Event {
         this.type = type;
     }
 
-    public Object getObject() {
+    public T getObject() {
         return object;
     }
 
-    public void setObject(Object object) {
+    public void setObject(T object) {
         this.object = object;
     }
 

@@ -19,15 +19,4 @@ package io.gravitee.kubernetes.client.model.v1;
  * @author Kamiel Ahmadpour (kamiel.ahmadpour at graviteesource.com)
  * @author GraviteeSource Team
  */
-public class SecretEvent extends Event {
-
-    private Secret data;
-
-    public Secret getData() {
-        return data;
-    }
-
-    public void setData(Secret data) {
-        this.data = data;
-    }
-}
+public class SecretEvent extends Event<Secret> {}

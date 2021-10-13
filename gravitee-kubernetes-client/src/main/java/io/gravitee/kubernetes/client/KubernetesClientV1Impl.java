@@ -318,27 +318,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                                     return Observable.empty();
                                 }
 
-                                T item = response.toJsonObject().mapTo(type);
-                                // TODO - Kamiel - 12/10/2021: to be replaced with proper operation
-                                if (
-                                    item.getType().equals(KubernetesEventType.MODIFIED.name()) ||
-                                    item.getType().equals(KubernetesEventType.ADDED.name())
-                                ) {
-                                    JsonObject json = response.toJsonObject();
-                                    JsonObject object = json.getJsonObject("object");
-                                    JsonObject metadata = object.getJsonObject("metadata");
-                                    String name = metadata.getString("name");
-
-                                    if (item instanceof ConfigMapEvent) {
-                                        get(String.format("kube://%s/configmap/%s", resource.namespace, name), ConfigMap.class)
-                                            .subscribe(((ConfigMapEvent) item)::setData, Throwable::printStackTrace);
-                                    } else if (item instanceof SecretEvent) {
-                                        get(String.format("kube://%s/secret/%s", resource.namespace, name), Secret.class)
-                                            .subscribe(((SecretEvent) item)::setData, Throwable::printStackTrace);
-                                    }
-                                }
-
-                                return Observable.just(item);
+                                return Observable.just(response.toJsonObject().mapTo(type));
                             }
                         )
                         .doFinally(
