@@ -17,12 +17,12 @@ package io.gravitee.kubernetes.client;
 
 import io.gravitee.common.http.HttpHeaders;
 import io.gravitee.common.http.MediaType;
+import io.gravitee.common.utils.UUID;
 import io.gravitee.kubernetes.client.config.KubernetesConfig;
 import io.gravitee.kubernetes.client.exception.ResourceNotFoundException;
 import io.gravitee.kubernetes.client.model.v1.*;
 import io.reactivex.*;
 import io.vertx.core.Future;
-import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpMethod;
@@ -50,11 +50,11 @@ import org.springframework.util.Assert;
 public class KubernetesClientV1Impl implements KubernetesClient {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KubernetesClientV1Impl.class);
-
+    private static final long PING_HANDLER_DELAY = 5000L;
     private final Vertx vertx;
     private final HttpClient httpClient;
     private final KubernetesConfig config;
-    private Map<String, Watch> watchMap = new HashMap<>();
+    private final Map<String, Watch> watchMap = new HashMap<>();
 
     @Autowired
     public KubernetesClientV1Impl(Vertx vertx, KubernetesConfig kubernetesConfig) {
@@ -198,12 +198,14 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                                     T data = null;
                                     if (resource.key == null) {
                                         data = item.mapTo(type);
-                                    } else if (item.getString("kind") != null) {
-                                        String kind = item.getString("kind").toLowerCase();
-                                        if (kind.equals(ResourceType.CONFIGMAP.value)) {
-                                            data = (T) item.mapTo(ConfigMap.class).getData().get(resource.key);
-                                        } else if (kind.equals(ResourceType.SECRET.value())) {
-                                            data = (T) item.mapTo(Secret.class).getData().get(resource.key);
+                                    } else {
+                                        String kind = item.getString("kind");
+                                        if (kind != null) {
+                                            if (kind.equalsIgnoreCase(ResourceType.CONFIGMAP.value)) {
+                                                data = (T) item.mapTo(ConfigMap.class).getData().get(resource.key);
+                                            } else if (kind.equalsIgnoreCase(ResourceType.SECRET.value())) {
+                                                data = (T) item.mapTo(Secret.class).getData().get(resource.key);
+                                            }
                                         }
                                     }
 
@@ -233,67 +235,49 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         }
 
         String fieldSelector = resource.name == null ? "" : String.format("metadata.name=%s", resource.name);
-        Watch watch = watchMap.computeIfAbsent(location, Watch::new);
-
-        if (watchMap.get(watch.location).stopped) {
-            if (watchMap.get(watch.location).timerId != 0) {
-                LOGGER.info("Cancel timer for Kubernetes resource watcher {}.", watch.location);
-                vertx.cancelTimer(watchMap.get(watch.location).timerId);
-                watchMap.remove(watch.location);
-            }
-            return Flowable.empty();
-        }
+        Watch watch = new Watch();
+        watchMap.putIfAbsent(watch.uid, watch);
 
         LOGGER.info("Start watching namespace [{}] with fieldSelector [{}]", resource.namespace, fieldSelector);
-        return retrieveLastResourceVersion(resource.namespace, type)
-            .flatMapObservable(lrv -> fetchEvents(resource, lrv, fieldSelector, watch.location, type))
-            .doOnSubscribe(
-                disposable ->
-                    vertx.setPeriodic(
-                        config.getWebsocketTimeout(),
-                        l -> {
-                            watchMap.get(watch.location).timerId = l;
-                            watch(location, type);
-                        }
-                    )
-            )
+        return Flowable
+            .<T>create(emitter -> eventEmitter(emitter, resource, fieldSelector, watch.uid, type), BackpressureStrategy.BUFFER)
             .doOnError(
-                throwable -> {
-                    LOGGER.error("Unable to get the last resource version", throwable);
-                    watchMap.get(watch.location).stopped = true;
-                }
-            )
-            .toFlowable(BackpressureStrategy.DROP);
+                throwable ->
+                    LOGGER.error(
+                        "An error occurred watching {} {} in namespace {}",
+                        resource.type,
+                        resource.name,
+                        resource.namespace,
+                        throwable
+                    )
+            );
     }
 
     @Override
-    public Future<Void> stop(String location) {
-        Assert.notNull(location, "Location can not be null");
-
-        Promise<Void> promise = Promise.promise();
-        if (watchMap.containsKey(location)) {
-            Watch watch = watchMap.get(location);
-            watch.stopped = true;
-            watchMap.put(location, watch);
-            promise.complete();
-        } else {
-            promise.fail(String.format("No watcher is found for %s", location));
-        }
-
-        return promise.future();
-    }
-
-    @Override
-    public Future<Void> stopAll() {
+    public Future<Void> stop() {
         watchMap.forEach((k, v) -> v.stopped = true);
         return Future.succeededFuture();
     }
 
-    private <T extends Event<?>> Observable<T> fetchEvents(
+    private <T extends Event<?>> void eventEmitter(
+        FlowableEmitter<T> emitter,
+        KubeResource resource,
+        String fieldSelector,
+        String uid,
+        Class<T> type
+    ) {
+        retrieveLastResourceVersion(resource.namespace, type)
+            .doOnSuccess(lrv -> fetchEvents(emitter, resource, lrv, fieldSelector, uid, type))
+            .doOnError(emitter::onError)
+            .subscribe();
+    }
+
+    private <T extends Event<?>> void fetchEvents(
+        FlowableEmitter<T> emitter,
         KubeResource resource,
         String lastResourceVersion,
         String fieldSelector,
-        String location,
+        String uid,
         Class<T> type
     ) {
         WebSocketConnectOptions webSocketConnectOptions = new WebSocketConnectOptions();
@@ -304,16 +288,29 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         webSocketConnectOptions.addHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
         webSocketConnectOptions.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + config.getAccessToken());
 
-        return httpClient
+        httpClient
             .rxWebSocket(webSocketConnectOptions)
             .flatMapObservable(
                 websocket ->
                     websocket
                         .toObservable()
+                        .doOnSubscribe(
+                            disposable ->
+                                watchMap.get(uid).timerId =
+                                    vertx.setTimer(
+                                        PING_HANDLER_DELAY,
+                                        aLong -> {
+                                            if (watchMap.get(uid).stopped) {
+                                                websocket.close();
+                                            } else {
+                                                websocket.rxWritePing(io.vertx.reactivex.core.buffer.Buffer.buffer("ping"));
+                                            }
+                                        }
+                                    )
+                        )
                         .flatMap(
                             response -> {
-                                if (watchMap.get(location).stopped) {
-                                    LOGGER.info("Stop Kubernetes resource watcher {}.", location);
+                                if (watchMap.get(uid).stopped) {
                                     websocket.close();
                                     return Observable.empty();
                                 }
@@ -321,13 +318,40 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                                 return Observable.just(response.toJsonObject().mapTo(type));
                             }
                         )
-                        .doFinally(
-                            () -> {
-                                LOGGER.debug("Close websocket connection.");
-                                websocket.close();
+                        .doOnNext(emitter::onNext)
+                        .doOnError(
+                            throwable -> {
+                                LOGGER.error(
+                                    "An error occurred watching {} {} in namespace {}, This watcher is stopped",
+                                    resource.type,
+                                    resource.name,
+                                    resource.namespace
+                                );
+                                if (!websocket.isClosed()) {
+                                    websocket.close();
+                                    watchMap.get(uid).stopped = true;
+                                }
+                                emitter.onError(throwable);
                             }
                         )
-            );
+                        .doOnComplete(
+                            () -> {
+                                if (!watchMap.get(uid).stopped) {
+                                    eventEmitter(emitter, resource, fieldSelector, uid, type);
+                                }
+                            }
+                        )
+                        .doFinally(
+                            () -> {
+                                if (watchMap.get(uid).stopped) {
+                                    vertx.cancelTimer(watchMap.get(uid).timerId);
+                                    watchMap.remove(uid);
+                                    emitter.onComplete();
+                                }
+                            }
+                        )
+            )
+            .subscribe();
     }
 
     private KubeResource parseLocation(String location) {
@@ -428,12 +452,12 @@ public class KubernetesClientV1Impl implements KubernetesClient {
     private static class Watch {
 
         private boolean stopped;
-        private final String location;
+        private final String uid;
         private long timerId;
 
-        public Watch(String location) {
+        public Watch() {
             this.stopped = false;
-            this.location = location;
+            this.uid = UUID.random().toString();
         }
     }
 

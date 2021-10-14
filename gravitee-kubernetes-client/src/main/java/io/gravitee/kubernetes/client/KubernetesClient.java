@@ -58,7 +58,5 @@ public interface KubernetesClient {
      */
     <T extends Event<?>> Flowable<T> watch(String location, Class<T> type);
 
-    Future<Void> stop(String location);
-
-    Future<Void> stopAll();
+    Future<Void> stop();
 }
