@@ -418,6 +418,12 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         private String name;
         private String key;
 
+        /**
+         * @param location A location is where your Kubernetes resource is located. It is also possible
+         * to ask for a specific key inside a configmap or secret. Example:
+         * /my_namespace/configmaps/my_configmap
+         * /my_namespace/secretes/my_secret/tls.key
+         */
         public KubernetesResource(String location) {
             String[] properties = location.substring(1).split("/"); // eliminate the initial /
 
