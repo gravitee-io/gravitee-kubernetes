@@ -33,8 +33,8 @@ import io.vertx.core.net.PemTrustOptions;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.http.HttpClient;
 import io.vertx.reactivex.core.http.HttpClientRequest;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,7 +54,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
     private final Vertx vertx;
     private final HttpClient httpClient;
     private final KubernetesConfig config;
-    private final Map<String, Watch> watchMap = new HashMap<>();
+    private final Map<String, Watch> watchMap = new ConcurrentHashMap<>();
 
     @Autowired
     public KubernetesClientV1Impl(Vertx vertx, KubernetesConfig kubernetesConfig) {
