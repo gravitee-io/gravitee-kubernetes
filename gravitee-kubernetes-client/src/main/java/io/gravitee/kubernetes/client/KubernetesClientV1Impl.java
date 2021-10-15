@@ -355,7 +355,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
     }
 
     private KubeResource parseLocation(String location) {
-        String[] properties = location.substring(7).split("/"); // eliminate initial kube://
+        String[] properties = location.substring(13).split("/"); // eliminate initial kubernetes://
 
         if (properties.length < 2) {
             LOGGER.error("Wrong location. A correct format looks like this \"kube://{namespace}/configmap/{configmap-name}\"");
