@@ -40,6 +40,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 
 /**
  * @author Kamiel Ahmadpour (kamiel.ahmadpour at graviteesource.com)
@@ -159,10 +160,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
 
     @Override
     public <T> Maybe<T> get(String location, Class<T> type) {
-        KubeResource resource = parseLocation(location);
-        if (resource == null) {
-            return Maybe.empty();
-        }
+        KubernetesResource resource = new KubernetesResource(location);
 
         LOGGER.debug("Retrieve [{}] in namespace [{}]", resource.type.value, resource.namespace);
         RequestOptions requestOptions = new RequestOptions();
@@ -235,10 +233,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
 
     @Override
     public <T extends Event<?>> Flowable<T> watch(String location, Class<T> type) {
-        KubeResource resource = parseLocation(location);
-        if (resource == null) {
-            return Flowable.empty();
-        }
+        KubernetesResource resource = new KubernetesResource(location);
 
         String fieldSelector = resource.name == null ? "" : String.format("metadata.name=%s", resource.name);
         Watch watch = new Watch();
@@ -267,7 +262,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
 
     private <T extends Event<?>> void fetchEvents(
         FlowableEmitter<T> emitter,
-        KubeResource resource,
+        KubernetesResource resource,
         String fieldSelector,
         String uid,
         Class<T> type
@@ -346,28 +341,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
             .subscribe();
     }
 
-    private KubeResource parseLocation(String location) {
-        String[] properties = location.substring(1).split("/"); // eliminate the initial /
-
-        if (properties.length < 2) {
-            LOGGER.error("Wrong location. A correct format looks like this \"/{namespace}/configmaps/{configmap-name}\"");
-            return null;
-        }
-
-        String key = properties.length == 4 ? properties[3] : null;
-        ResourceType resourceType = null;
-        for (ResourceType type : ResourceType.values()) {
-            if (type.value().equals(properties[1])) {
-                resourceType = type;
-            }
-        }
-
-        String resourceName = properties.length > 2 ? properties[2] : null;
-
-        return new KubeResource(properties[0], resourceType, resourceName, key);
-    }
-
-    private String generateRequestUri(KubeResource resource) {
+    private String generateRequestUri(KubernetesResource resource) {
         switch (resource.type) {
             case CONFIGMAPS:
                 return String.format("/api/v1/namespaces/%s/configmaps/%s", resource.namespace, resource.name);
@@ -437,31 +411,87 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         }
     }
 
-    private static class KubeResource {
+    public static class KubernetesResource {
 
-        private final String namespace;
-        private final ResourceType type;
-        private final String name;
-        private final String key;
+        private String namespace;
+        private KubernetesResourceType type;
+        private String name;
+        private String key;
 
-        private KubeResource(String namespace, ResourceType type, String name, String key) {
+        public KubernetesResource(String location) {
+            String[] properties = location.substring(1).split("/"); // eliminate the initial /
+
+            if (properties.length < 2 || hasEmptyValues(properties)) {
+                throw new RuntimeException("Wrong location. A correct format looks like this \"/{namespace}/configmaps/{configmap-name}\"");
+            }
+
+            String resourceKey = properties.length == 4 ? properties[3] : null;
+            KubernetesResourceType resourceType = null;
+            for (KubernetesResourceType rt : KubernetesResourceType.values()) {
+                if (rt.value().equals(properties[1])) {
+                    resourceType = rt;
+                }
+            }
+
+            String resourceName = properties.length > 2 ? properties[2] : null;
+
+            this.setNamespace(properties[0]);
+            this.setType(resourceType);
+            this.setName(resourceName);
+            this.setKey(resourceKey);
+        }
+
+        private boolean hasEmptyValues(String[] properties) {
+            for (String property : properties) {
+                if (!StringUtils.hasText(property)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public String getNamespace() {
+            return namespace;
+        }
+
+        public void setNamespace(String namespace) {
             Assert.notNull(namespace, "Namespace can not be null");
-            Assert.notNull(type, "Resource type can not be null");
-
             this.namespace = namespace;
+        }
+
+        public KubernetesResourceType getType() {
+            return type;
+        }
+
+        public void setType(KubernetesResourceType type) {
+            Assert.notNull(type, "Resource type can not be null");
             this.type = type;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
             this.name = name;
+        }
+
+        public String getKey() {
+            return key;
+        }
+
+        public void setKey(String key) {
             this.key = key;
         }
     }
 
-    private enum ResourceType {
+    public enum KubernetesResourceType {
         SECRETS("secrets"),
         CONFIGMAPS("configmaps");
 
         private final String value;
 
-        ResourceType(String value) {
+        KubernetesResourceType(String value) {
             this.value = value;
         }
 
