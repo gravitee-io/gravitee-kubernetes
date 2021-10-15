@@ -50,7 +50,7 @@ public class KubernetesClientV1ImplTest extends KubernetestUnitTest {
     public void testSecret(TestContext tc) {
         Async async = tc.async();
         kubernetesClient
-            .get("kube://test/secret/secret1", Secret.class)
+            .get("/test/secrets/secret1", Secret.class)
             .doOnSuccess(
                 secret -> {
                     tc.assertNotNull(secret.getData());
@@ -68,7 +68,7 @@ public class KubernetesClientV1ImplTest extends KubernetestUnitTest {
     public void retrieveSingleKeyInSecret(TestContext tc) {
         Async async = tc.async();
         kubernetesClient
-            .get("kube://test/secret/secret1/tls.key", String.class)
+            .get("/test/secrets/secret1/tls.key", String.class)
             .doOnSuccess(
                 tlsKey -> {
                     tc.assertNotNull(tlsKey);
@@ -99,7 +99,7 @@ public class KubernetesClientV1ImplTest extends KubernetestUnitTest {
     public void testConfigMap(TestContext tc) {
         Async async = tc.async();
         kubernetesClient
-            .get("kube://test/configmap/configmap1", ConfigMap.class)
+            .get("/test/configmaps/configmap1", ConfigMap.class)
             .doOnSuccess(
                 configMap -> {
                     tc.assertNotNull(configMap.getData());
@@ -117,7 +117,7 @@ public class KubernetesClientV1ImplTest extends KubernetestUnitTest {
     public void retrieveSingleKeyInConfigMap(TestContext tc) {
         Async async = tc.async();
         kubernetesClient
-            .get("kube://test/configmap/configmap1/host", String.class)
+            .get("/test/configmaps/configmap1/host", String.class)
             .doOnSuccess(
                 host -> {
                     tc.assertNotNull(host);

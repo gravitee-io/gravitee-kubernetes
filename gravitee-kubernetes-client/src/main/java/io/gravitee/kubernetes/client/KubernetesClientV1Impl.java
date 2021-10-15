@@ -199,13 +199,19 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                                     if (resource.key == null) {
                                         data = item.mapTo(type);
                                     } else {
+                                        if (!type.equals(String.class)) {
+                                            return Maybe.error(
+                                                new RuntimeException(
+                                                    "Only String.class is suppoerted when getting a specific key inside a ConfigMap or Secret ..."
+                                                )
+                                            );
+                                        }
+
                                         String kind = item.getString("kind");
-                                        if (kind != null) {
-                                            if (kind.equalsIgnoreCase(ResourceType.CONFIGMAP.value)) {
-                                                data = (T) item.mapTo(ConfigMap.class).getData().get(resource.key);
-                                            } else if (kind.equalsIgnoreCase(ResourceType.SECRET.value())) {
-                                                data = (T) item.mapTo(Secret.class).getData().get(resource.key);
-                                            }
+                                        if (kind.equals("ConfigMap")) {
+                                            data = (T) item.mapTo(ConfigMap.class).getData().get(resource.key);
+                                        } else if (kind.equals("Secret")) {
+                                            data = (T) item.mapTo(Secret.class).getData().get(resource.key);
                                         }
                                     }
 
@@ -240,7 +246,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
 
         LOGGER.info("Start watching namespace [{}] with fieldSelector [{}]", resource.namespace, fieldSelector);
         return Flowable
-            .<T>create(emitter -> eventEmitter(emitter, resource, fieldSelector, watch.uid, type), BackpressureStrategy.BUFFER)
+            .<T>create(emitter -> fetchEvents(emitter, resource, fieldSelector, watch.uid, type), BackpressureStrategy.BUFFER)
             .doOnError(
                 throwable ->
                     LOGGER.error(
@@ -259,34 +265,20 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         return Future.succeededFuture();
     }
 
-    private <T extends Event<?>> void eventEmitter(
-        FlowableEmitter<T> emitter,
-        KubeResource resource,
-        String fieldSelector,
-        String uid,
-        Class<T> type
-    ) {
-        retrieveLastResourceVersion(resource.namespace, type)
-            .doOnSuccess(lrv -> fetchEvents(emitter, resource, lrv, fieldSelector, uid, type))
-            .doOnError(emitter::onError)
-            .subscribe();
-    }
-
     private <T extends Event<?>> void fetchEvents(
         FlowableEmitter<T> emitter,
         KubeResource resource,
-        String lastResourceVersion,
         String fieldSelector,
         String uid,
         Class<T> type
     ) {
-        WebSocketConnectOptions webSocketConnectOptions = new WebSocketConnectOptions();
-        webSocketConnectOptions.setURI(watcherUrlPath(resource.namespace, lastResourceVersion, fieldSelector, type));
-        webSocketConnectOptions.setHost(config.getApiServerHost());
-        webSocketConnectOptions.setPort(config.getApiServerPort());
-        webSocketConnectOptions.setSsl(true);
-        webSocketConnectOptions.addHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
-        webSocketConnectOptions.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + config.getAccessToken());
+        WebSocketConnectOptions webSocketConnectOptions = new WebSocketConnectOptions()
+            .setURI(watcherUrlPath(resource.namespace, fieldSelector, type))
+            .setHost(config.getApiServerHost())
+            .setPort(config.getApiServerPort())
+            .setSsl(config.useSSL())
+            .addHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
+            .addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + config.getAccessToken());
 
         httpClient
             .rxWebSocket(webSocketConnectOptions)
@@ -337,7 +329,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                         .doOnComplete(
                             () -> {
                                 if (!watchMap.get(uid).stopped) {
-                                    eventEmitter(emitter, resource, fieldSelector, uid, type);
+                                    fetchEvents(emitter, resource, fieldSelector, uid, type);
                                 }
                             }
                         )
@@ -355,10 +347,10 @@ public class KubernetesClientV1Impl implements KubernetesClient {
     }
 
     private KubeResource parseLocation(String location) {
-        String[] properties = location.substring(13).split("/"); // eliminate initial kubernetes://
+        String[] properties = location.substring(1).split("/"); // eliminate the initial /
 
         if (properties.length < 2) {
-            LOGGER.error("Wrong location. A correct format looks like this \"kube://{namespace}/configmap/{configmap-name}\"");
+            LOGGER.error("Wrong location. A correct format looks like this \"/{namespace}/configmaps/{configmap-name}\"");
             return null;
         }
 
@@ -377,26 +369,16 @@ public class KubernetesClientV1Impl implements KubernetesClient {
 
     private String generateRequestUri(KubeResource resource) {
         switch (resource.type) {
-            case CONFIGMAP:
+            case CONFIGMAPS:
                 return String.format("/api/v1/namespaces/%s/configmaps/%s", resource.namespace, resource.name);
-            case SECRET:
+            case SECRETS:
                 return String.format("/api/v1/namespaces/%s/secrets/%s", resource.namespace, resource.name);
             default:
                 return null;
         }
     }
 
-    private <T extends Event<?>> Single<String> retrieveLastResourceVersion(String namespace, Class<T> type) {
-        if (type.equals(ConfigMapEvent.class)) {
-            return configMapList(namespace).map(configMapList -> configMapList.getMetadata().getResourceVersion());
-        } else if (type.equals(SecretEvent.class)) {
-            return secretList(namespace).map(secretList -> secretList.getMetadata().getResourceVersion());
-        }
-
-        return Single.error(new RuntimeException("Unable to determine the resource type " + type));
-    }
-
-    private <T> String watcherUrlPath(String namespace, String lastResourceVersion, String fieldSelector, Class<T> type) {
+    private <T> String watcherUrlPath(String namespace, String fieldSelector, Class<T> type) {
         if (type == null) {
             return null;
         }
@@ -411,10 +393,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                 "allowWatchBookmarks=true" +
                 "&" +
                 "fieldSelector=" +
-                fieldSelector +
-                "&" +
-                "resourceVersion=" +
-                lastResourceVersion
+                fieldSelector
             );
         } else if (type.equals(SecretEvent.class)) {
             return (
@@ -426,10 +405,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                 "allowWatchBookmarks=true" +
                 "&" +
                 "fieldSelector=" +
-                fieldSelector +
-                "&" +
-                "resourceVersion=" +
-                lastResourceVersion
+                fieldSelector
             );
         }
 
@@ -480,8 +456,8 @@ public class KubernetesClientV1Impl implements KubernetesClient {
     }
 
     private enum ResourceType {
-        SECRET("secret"),
-        CONFIGMAP("configmap");
+        SECRETS("secrets"),
+        CONFIGMAPS("configmaps");
 
         private final String value;
 

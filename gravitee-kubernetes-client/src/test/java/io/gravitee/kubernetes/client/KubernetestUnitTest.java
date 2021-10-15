@@ -135,7 +135,7 @@ public class KubernetestUnitTest {
         server
             .expect()
             .get()
-            .withPath("/api/v1/namespaces/test/configmaps?watch=true&allowWatchBookmarks=true&fieldSelector=&resourceVersion=1234")
+            .withPath("/api/v1/namespaces/test/configmaps?watch=true&allowWatchBookmarks=true&fieldSelector=")
             .andUpgradeToWebSocket()
             .open()
             .waitFor(EVENT_WAIT_PERIOD_MS)
@@ -154,9 +154,7 @@ public class KubernetestUnitTest {
         server
             .expect()
             .get()
-            .withPath(
-                "/api/v1/namespaces/test/configmaps?watch=true&allowWatchBookmarks=true&fieldSelector=metadata.name=configmap1&resourceVersion=1234"
-            )
+            .withPath("/api/v1/namespaces/test/configmaps?watch=true&allowWatchBookmarks=true&fieldSelector=metadata.name=configmap1")
             .andUpgradeToWebSocket()
             .open()
             .waitFor(EVENT_WAIT_PERIOD_MS)
@@ -169,7 +167,7 @@ public class KubernetestUnitTest {
         server
             .expect()
             .get()
-            .withPath("/api/v1/namespaces/test/secrets?watch=true&allowWatchBookmarks=true&fieldSelector=&resourceVersion=1234")
+            .withPath("/api/v1/namespaces/test/secrets?watch=true&allowWatchBookmarks=true&fieldSelector=")
             .andUpgradeToWebSocket()
             .open()
             .waitFor(EVENT_WAIT_PERIOD_MS)
@@ -188,9 +186,7 @@ public class KubernetestUnitTest {
         server
             .expect()
             .get()
-            .withPath(
-                "/api/v1/namespaces/test/secrets?watch=true&allowWatchBookmarks=true&fieldSelector=metadata.name=secret1&resourceVersion=1234"
-            )
+            .withPath("/api/v1/namespaces/test/secrets?watch=true&allowWatchBookmarks=true&fieldSelector=metadata.name=secret1")
             .andUpgradeToWebSocket()
             .open()
             .waitFor(EVENT_WAIT_PERIOD_MS)

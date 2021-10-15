@@ -46,17 +46,25 @@ public interface KubernetesClient {
      * Get a Kubernetes element for the given location.
      *
      * @param location the location of the Kubernetes element. Example:
-     *    kube://default/configmap/gravitee-config
+     *    /default/configmaps/gravitee-config  or
+     *    /default/configmaps/gravitee-config/my.key  (if you want to get only a special key)
+     *    when getting only a special key, type should be set always to String.class
      * @return the expected element or nothing if it does not exists.
      */
     <T> Maybe<T> get(String location, Class<T> type);
 
     /**
      * Watch for any changes on a Kubernetes element at a given location. Example:
-     *      kube://default/secret/gravitee-config
+     *      /default/secrets/gravitee-secret
+     * You can also watch for all the events for special resource inside a namespace:
+     *      /default/configmaps
      * @return a flowable where element will be pushed at any change.
      */
     <T extends Event<?>> Flowable<T> watch(String location, Class<T> type);
 
+    /**
+     * Stop all the watchers and release the resources
+     * @return
+     */
     Future<Void> stop();
 }

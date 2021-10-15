@@ -41,7 +41,7 @@ public class KubernetesSecretV1WatcherTest extends KubernetestUnitTest {
         try {
             CountDownLatch latch = new CountDownLatch(5);
             kubernetesClient
-                .watch("kube://test/secret", SecretEvent.class)
+                .watch("/test/secrets", SecretEvent.class)
                 .doOnNext(
                     event -> {
                         events.add(event);
@@ -65,7 +65,7 @@ public class KubernetesSecretV1WatcherTest extends KubernetestUnitTest {
         try {
             CountDownLatch latch = new CountDownLatch(2);
             kubernetesClient
-                .watch("kube://test/secret/secret1", SecretEvent.class)
+                .watch("/test/secrets/secret1", SecretEvent.class)
                 .doOnNext(
                     event -> {
                         events.add(event);

@@ -41,7 +41,7 @@ public class KubernetesConfigMapV1WatcherTest extends KubernetestUnitTest {
         try {
             CountDownLatch latch = new CountDownLatch(5);
             kubernetesClient
-                .watch("kube://test/configmap", ConfigMapEvent.class)
+                .watch("/test/configmaps", ConfigMapEvent.class)
                 .doOnNext(
                     event -> {
                         events.add(event);
@@ -65,7 +65,7 @@ public class KubernetesConfigMapV1WatcherTest extends KubernetestUnitTest {
         try {
             CountDownLatch latch = new CountDownLatch(2);
             kubernetesClient
-                .watch("kube://test/configmap/configmap1", ConfigMapEvent.class)
+                .watch("/test/configmaps/configmap1", ConfigMapEvent.class)
                 .doOnNext(
                     event -> {
                         events.add(event);
