@@ -388,10 +388,10 @@ public class KubernetesClientV1Impl implements KubernetesClient {
 
     private HttpClientOptions getHttpClientOptions() {
         PemTrustOptions trustOptions = new PemTrustOptions();
-        if (config.getCaCertData() == null
-                || config.getApiServerHost() == null
-                || config.getApiServerPort() == 0) {
-            LOGGER.error("KubeConfig is not configured properly. If you are running locally make sure you already configured your kubeconfig");
+        if (config.getCaCertData() == null || config.getApiServerHost() == null || config.getApiServerPort() == 0) {
+            LOGGER.error(
+                "KubeConfig is not configured properly. If you are running locally make sure you already configured your kubeconfig"
+            );
         }
 
         if (config.getCaCertData() != null) {
