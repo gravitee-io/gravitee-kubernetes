@@ -15,6 +15,8 @@
  */
 package io.gravitee.kubernetes.client;
 
+import io.gravitee.kubernetes.client.model.v1.ConfigMap;
+import io.gravitee.kubernetes.client.model.v1.Secret;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -48,13 +50,29 @@ public class KubernetesClientV1ImplTest extends KubernetestUnitTest {
     public void testSecret(TestContext tc) {
         Async async = tc.async();
         kubernetesClient
-            .secret("test", "secret1")
+            .get("/test/secrets/secret1", Secret.class)
             .doOnSuccess(
                 secret -> {
                     tc.assertNotNull(secret.getData());
                     tc.assertEquals(2, secret.getData().size());
                     tc.assertNotNull(secret.getData().get("tls.key"));
                     tc.assertNotNull(secret.getData().get("tls.pem"));
+                    async.complete();
+                }
+            )
+            .doOnError(tc::fail)
+            .subscribe();
+    }
+
+    @Test
+    public void retrieveSingleKeyInSecret(TestContext tc) {
+        Async async = tc.async();
+        kubernetesClient
+            .get("/test/secrets/secret1/tls.key", String.class)
+            .doOnSuccess(
+                tlsKey -> {
+                    tc.assertNotNull(tlsKey);
+                    tc.assertEquals("dHNsLmtleQ==", tlsKey);
                     async.complete();
                 }
             )
@@ -81,13 +99,29 @@ public class KubernetesClientV1ImplTest extends KubernetestUnitTest {
     public void testConfigMap(TestContext tc) {
         Async async = tc.async();
         kubernetesClient
-            .configMap("test", "configmap1")
+            .get("/test/configmaps/configmap1", ConfigMap.class)
             .doOnSuccess(
                 configMap -> {
                     tc.assertNotNull(configMap.getData());
                     tc.assertEquals(2, configMap.getData().size());
                     tc.assertNotNull(configMap.getData().get("host"));
                     tc.assertNotNull(configMap.getData().get("port"));
+                    async.complete();
+                }
+            )
+            .doOnError(tc::fail)
+            .subscribe();
+    }
+
+    @Test
+    public void retrieveSingleKeyInConfigMap(TestContext tc) {
+        Async async = tc.async();
+        kubernetesClient
+            .get("/test/configmaps/configmap1/host", String.class)
+            .doOnSuccess(
+                host -> {
+                    tc.assertNotNull(host);
+                    tc.assertEquals("localhost", host);
                     async.complete();
                 }
             )

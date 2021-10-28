@@ -15,12 +15,14 @@
  */
 package io.gravitee.kubernetes.client;
 
-import io.gravitee.kubernetes.client.model.v1.ConfigMap;
 import io.gravitee.kubernetes.client.model.v1.ConfigMapList;
+import io.gravitee.kubernetes.client.model.v1.Event;
 import io.gravitee.kubernetes.client.model.v1.Secret;
 import io.gravitee.kubernetes.client.model.v1.SecretList;
+import io.reactivex.Flowable;
 import io.reactivex.Maybe;
 import io.reactivex.Single;
+import io.vertx.core.Future;
 
 /**
  * @author Kamiel Ahmadpour (kamiel.ahmadpour at graviteesource.com)
@@ -35,24 +37,34 @@ public interface KubernetesClient {
     Single<SecretList> secretList(String namespace);
 
     /**
-     * Retrieve Kubernetes secret with given name
-     * @param namespace
-     * @param secretName
-     * @return the {@link Secret} info if it exist
-     */
-    Maybe<Secret> secret(String namespace, String secretName);
-
-    /**
      * @param namespace
      * @return list of {@link ConfigMapList}
      */
     Single<ConfigMapList> configMapList(String namespace);
 
     /**
-     * Retrieve Kubernetes config map with give name
-     * @param namespace
-     * @param configMapName
-     * @return the {@link ConfigMap} if it exist
+     * Get a Kubernetes element for the given location.
+     *
+     * @param location the location of the Kubernetes element. Example:
+     *    /default/configmaps/gravitee-config  or
+     *    /default/configmaps/gravitee-config/my.key  (if you want to get only a special key)
+     *    when getting only a special key, type should be set always to String.class
+     * @return the expected element or nothing if it does not exists.
      */
-    Maybe<ConfigMap> configMap(String namespace, String configMapName);
+    <T> Maybe<T> get(String location, Class<T> type);
+
+    /**
+     * Watch for any changes on a Kubernetes element at a given location. Example:
+     *      /default/secrets/gravitee-secret
+     * You can also watch for all the events for special resource inside a namespace:
+     *      /default/configmaps
+     * @return a flowable where element will be pushed at any change.
+     */
+    <T extends Event<?>> Flowable<T> watch(String location, Class<T> type);
+
+    /**
+     * Stop all the watchers and release the resources
+     * @return
+     */
+    Future<Void> stop();
 }

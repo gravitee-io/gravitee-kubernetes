@@ -18,6 +18,8 @@ package io.gravitee.kubernetes.client;
 import static org.junit.Assert.assertEquals;
 
 import io.gravitee.kubernetes.client.model.v1.Event;
+import io.gravitee.kubernetes.client.model.v1.Secret;
+import io.gravitee.kubernetes.client.model.v1.SecretEvent;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,16 +35,13 @@ import org.junit.runner.RunWith;
 @RunWith(VertxUnitRunner.class)
 public class KubernetesSecretV1WatcherTest extends KubernetestUnitTest {
 
-    private KubernetesSecretV1Watcher secretV1Watcher;
-
     @Test
     public void watchAllResources() {
-        secretV1Watcher = new KubernetesSecretV1Watcher(vertx, kubernetesClient, kubernetesConfig);
         List<Event> events = new ArrayList<>();
         try {
             CountDownLatch latch = new CountDownLatch(5);
-            secretV1Watcher
-                .watch("test")
+            kubernetesClient
+                .watch("/test/secrets", SecretEvent.class)
                 .doOnNext(
                     event -> {
                         events.add(event);
@@ -62,12 +61,11 @@ public class KubernetesSecretV1WatcherTest extends KubernetestUnitTest {
 
     @Test
     public void watchSpecificResource() {
-        secretV1Watcher = new KubernetesSecretV1Watcher(vertx, kubernetesClient, kubernetesConfig);
         List<Event> events = new ArrayList<>();
         try {
             CountDownLatch latch = new CountDownLatch(2);
-            secretV1Watcher
-                .watch("test", "metadata.name=configmap1")
+            kubernetesClient
+                .watch("/test/secrets/secret1", SecretEvent.class)
                 .doOnNext(
                     event -> {
                         events.add(event);

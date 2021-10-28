@@ -32,7 +32,6 @@ import org.junit.Before;
 /**
  * @author Kamiel Ahmadpour (kamiel.ahmadpour at graviteesource.com)
  * @author GraviteeSource Team
- * @since
  */
 public class KubernetestUnitTest {
 
@@ -52,12 +51,16 @@ public class KubernetestUnitTest {
 
         ConfigMap configMap1 = getConfigMap("test", UUID.randomUUID().toString(), "configmap1", configMapData);
         ConfigMap configMap2 = getConfigMap("test", UUID.randomUUID().toString(), "configmap2", configMapData);
+        ConfigMap configMap3 = getConfigMap("test", UUID.randomUUID().toString(), "configmap3", configMapData);
+        ConfigMap configMap4 = getConfigMap("test", UUID.randomUUID().toString(), "configmap4", configMapData);
 
         Map<String, String> secretData = new HashMap<>();
         secretData.put("tls.key", "dHNsLmtleQ==");
         secretData.put("tls.pem", "dHNsLnBlbQ==");
         Secret secret1 = getSecret("test", UUID.randomUUID().toString(), "secret1", secretData);
         Secret secret2 = getSecret("test", UUID.randomUUID().toString(), "secret2", secretData);
+        Secret secret3 = getSecret("test", UUID.randomUUID().toString(), "secret3", secretData);
+        Secret secret4 = getSecret("test", UUID.randomUUID().toString(), "secret4", secretData);
 
         server = new KubernetesMockServer(true);
 
@@ -73,6 +76,24 @@ public class KubernetestUnitTest {
             .get()
             .withPath("/api/v1/namespaces/test/secrets/secret1")
             .andReturn(200, new SecretBuilder(secret1).build())
+            .always();
+        server
+            .expect()
+            .get()
+            .withPath("/api/v1/namespaces/test/secrets/secret2")
+            .andReturn(200, new SecretBuilder(secret2).build())
+            .always();
+        server
+            .expect()
+            .get()
+            .withPath("/api/v1/namespaces/test/secrets/secret3")
+            .andReturn(200, new SecretBuilder(secret3).build())
+            .always();
+        server
+            .expect()
+            .get()
+            .withPath("/api/v1/namespaces/test/secrets/secret4")
+            .andReturn(200, new SecretBuilder(secret4).build())
             .always();
 
         server
@@ -92,12 +113,29 @@ public class KubernetestUnitTest {
             .andReturn(200, new ConfigMapBuilder(configMap1).build())
             .always();
 
-        ConfigMap configMap3 = getConfigMap("test", UUID.randomUUID().toString(), "configmap3", configMapData);
-        ConfigMap configMap4 = getConfigMap("test", UUID.randomUUID().toString(), "configmap4", configMapData);
         server
             .expect()
             .get()
-            .withPath("/api/v1/namespaces/test/configmaps?watch=true&allowWatchBookmarks=true&fieldSelector=&resourceVersion=1234")
+            .withPath("/api/v1/namespaces/test/configmaps/configmap2")
+            .andReturn(200, new ConfigMapBuilder(configMap2).build())
+            .always();
+        server
+            .expect()
+            .get()
+            .withPath("/api/v1/namespaces/test/configmaps/configmap3")
+            .andReturn(200, new ConfigMapBuilder(configMap3).build())
+            .always();
+        server
+            .expect()
+            .get()
+            .withPath("/api/v1/namespaces/test/configmaps/configmap4")
+            .andReturn(200, new ConfigMapBuilder(configMap4).build())
+            .always();
+
+        server
+            .expect()
+            .get()
+            .withPath("/api/v1/namespaces/test/configmaps?watch=true&allowWatchBookmarks=true&fieldSelector=")
             .andUpgradeToWebSocket()
             .open()
             .waitFor(EVENT_WAIT_PERIOD_MS)
@@ -116,24 +154,20 @@ public class KubernetestUnitTest {
         server
             .expect()
             .get()
-            .withPath(
-                "/api/v1/namespaces/test/configmaps?watch=true&allowWatchBookmarks=true&fieldSelector=metadata.name=configmap1&resourceVersion=1234"
-            )
+            .withPath("/api/v1/namespaces/test/configmaps?watch=true&allowWatchBookmarks=true&fieldSelector=metadata.name=configmap1")
             .andUpgradeToWebSocket()
             .open()
             .waitFor(EVENT_WAIT_PERIOD_MS)
-            .andEmit(new WatchEvent(addFakeData(secret2), "MODIFIED"))
+            .andEmit(new WatchEvent(addFakeData(configMap1), "MODIFIED"))
             .waitFor(EVENT_WAIT_PERIOD_MS)
             .andEmit(new WatchEvent(configMap1, "DELETED"))
             .done()
             .once();
 
-        Secret secret3 = getSecret("test", UUID.randomUUID().toString(), "secret3", secretData);
-        Secret secret4 = getSecret("test", UUID.randomUUID().toString(), "secret4", secretData);
         server
             .expect()
             .get()
-            .withPath("/api/v1/namespaces/test/secrets?watch=true&allowWatchBookmarks=true&fieldSelector=&resourceVersion=1234")
+            .withPath("/api/v1/namespaces/test/secrets?watch=true&allowWatchBookmarks=true&fieldSelector=")
             .andUpgradeToWebSocket()
             .open()
             .waitFor(EVENT_WAIT_PERIOD_MS)
@@ -152,9 +186,7 @@ public class KubernetestUnitTest {
         server
             .expect()
             .get()
-            .withPath(
-                "/api/v1/namespaces/test/secrets?watch=true&allowWatchBookmarks=true&fieldSelector=metadata.name=configmap1&resourceVersion=1234"
-            )
+            .withPath("/api/v1/namespaces/test/secrets?watch=true&allowWatchBookmarks=true&fieldSelector=metadata.name=secret1")
             .andUpgradeToWebSocket()
             .open()
             .waitFor(EVENT_WAIT_PERIOD_MS)

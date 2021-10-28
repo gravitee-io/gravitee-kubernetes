@@ -28,7 +28,7 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.gravitee.gateway.services</groupId>
+    <groupId>io.gravitee.kubernetes</groupId>
     <artifactId>gravitee-kubernetes-client</artifactId>
     <name>Gravitee.io APIM - Kubernetes - Client</name>
 
@@ -53,11 +53,6 @@
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-rx-java2</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.vertx</groupId>
-            <artifactId>vertx-web-client</artifactId>
             <scope>provided</scope>
         </dependency>
 

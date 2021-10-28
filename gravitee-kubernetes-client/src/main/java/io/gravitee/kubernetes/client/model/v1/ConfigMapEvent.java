@@ -15,44 +15,8 @@
  */
 package io.gravitee.kubernetes.client.model.v1;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 /**
  * @author Kamiel Ahmadpour (kamiel.ahmadpour at graviteesource.com)
  * @author GraviteeSource Team
- * @since 3.9.11
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
-public class Event<T> {
-
-    private String type;
-    private T object;
-
-    public Event() {}
-
-    public Event(String type, T object) {
-        this.type = type;
-        this.object = object;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    public T getObject() {
-        return object;
-    }
-
-    public void setObject(T object) {
-        this.object = object;
-    }
-
-    @Override
-    public String toString() {
-        return "Event{" + "type='" + type + '\'' + ", object=" + object + '}';
-    }
-}
+public class ConfigMapEvent extends Event<ConfigMap> {}
