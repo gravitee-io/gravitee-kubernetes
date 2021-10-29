@@ -305,6 +305,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                                 return Observable.just(response.toJsonObject().mapTo(type));
                             }
                         )
+                        .skip(1) // each time you connect to the API server, you get an initial ADD event representing the current resource
                         .doOnNext(emitter::onNext)
                         .doOnError(
                             throwable -> {
