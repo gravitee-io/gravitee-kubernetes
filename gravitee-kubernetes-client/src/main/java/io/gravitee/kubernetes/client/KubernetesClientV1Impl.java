@@ -22,6 +22,7 @@ import io.gravitee.kubernetes.client.config.KubernetesConfig;
 import io.gravitee.kubernetes.client.exception.ResourceNotFoundException;
 import io.gravitee.kubernetes.client.model.v1.*;
 import io.reactivex.*;
+import io.reactivex.flowables.ConnectableFlowable;
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientOptions;
@@ -251,7 +252,9 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                         resource.namespace,
                         throwable
                     )
-            );
+            )
+            .publish()
+            .refCount();
     }
 
     @Override
