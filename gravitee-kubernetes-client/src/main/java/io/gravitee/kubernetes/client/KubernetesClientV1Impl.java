@@ -22,7 +22,6 @@ import io.gravitee.kubernetes.client.config.KubernetesConfig;
 import io.gravitee.kubernetes.client.exception.ResourceNotFoundException;
 import io.gravitee.kubernetes.client.model.v1.*;
 import io.reactivex.*;
-import io.reactivex.flowables.ConnectableFlowable;
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientOptions;
@@ -57,6 +56,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
     private final HttpClient httpClient;
     private final KubernetesConfig config;
     private final Map<String, Watch> watchMap = new ConcurrentHashMap<>();
+    private final Map<String, Flowable<? extends Event<?>>> flowableMap = new ConcurrentHashMap<>();
 
     @Autowired
     public KubernetesClientV1Impl(Vertx vertx, KubernetesConfig kubernetesConfig) {
@@ -240,8 +240,13 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         Watch watch = new Watch();
         watchMap.putIfAbsent(watch.uid, watch);
 
+        String flowableKey = fieldSelector.equals("") ? resource.namespace : resource.name;
+        if (flowableMap.containsKey(flowableKey)) {
+            return (Flowable<T>) flowableMap.get(flowableKey);
+        }
+
         LOGGER.info("Start watching namespace [{}] with fieldSelector [{}]", resource.namespace, fieldSelector);
-        return Flowable
+        Flowable<T> flowable = Flowable
             .<T>create(emitter -> fetchEvents(emitter, resource, fieldSelector, watch.uid, type), BackpressureStrategy.BUFFER)
             .doOnError(
                 throwable ->
@@ -255,6 +260,10 @@ public class KubernetesClientV1Impl implements KubernetesClient {
             )
             .publish()
             .refCount();
+
+        flowableMap.put(flowableKey, flowable);
+
+        return flowable;
     }
 
     @Override
