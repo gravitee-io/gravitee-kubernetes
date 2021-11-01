@@ -258,6 +258,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                         throwable
                     )
             )
+            .doFinally(() -> flowableMap.remove(flowableKey))
             .publish()
             .refCount();
 
