@@ -335,7 +335,9 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                                 }
                                 emitter.onError(throwable);
                                 if (watchMap.get(uid).retries < 5) {
-                                    LOGGER.info("An error occurred connecting to the Kubernetes API server, trying to reconnect in 5 seconds ...");
+                                    LOGGER.info(
+                                        "An error occurred connecting to the Kubernetes API server, trying to reconnect in 5 seconds ..."
+                                    );
                                     watchMap.get(uid).retries++;
                                     Thread.sleep(5 * 1000L);
                                     fetchEvents(emitter, resource, fieldSelector, uid, type);
