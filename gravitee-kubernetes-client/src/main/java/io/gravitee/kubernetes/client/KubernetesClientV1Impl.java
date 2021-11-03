@@ -247,7 +247,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
 
         LOGGER.info("Start watching namespace [{}] with fieldSelector [{}]", resource.namespace, fieldSelector);
         Flowable<T> flowable = Flowable
-            .<T>create(emitter -> fetchEvents(emitter, resource, fieldSelector, watch.uid, type), BackpressureStrategy.BUFFER)
+            .<T>create(emitter -> fetchEvents(emitter, resource, fieldSelector, watch.uid, type), BackpressureStrategy.LATEST)
             .doOnError(
                 throwable ->
                     LOGGER.error(
