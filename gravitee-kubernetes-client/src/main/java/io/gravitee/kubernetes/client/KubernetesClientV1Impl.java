@@ -295,7 +295,8 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                     websocket
                         .toObservable()
                         .doOnSubscribe(
-                            disposable ->
+                            disposable -> {
+                                watchMap.get(uid).retries = 0;
                                 watchMap.get(uid).timerId =
                                     vertx.setTimer(
                                         PING_HANDLER_DELAY,
@@ -306,7 +307,8 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                                                 websocket.rxWritePing(io.vertx.reactivex.core.buffer.Buffer.buffer("ping"));
                                             }
                                         }
-                                    )
+                                    );
+                            }
                         )
                         .flatMap(
                             response -> {
@@ -330,9 +332,16 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                                 );
                                 if (!websocket.isClosed()) {
                                     websocket.close();
-                                    watchMap.get(uid).stopped = true;
                                 }
                                 emitter.onError(throwable);
+                                if (watchMap.get(uid).retries < 5) {
+                                    LOGGER.info("An error occurred connecting to the Kubernetes API server, trying to reconnect in 5 seconds ...");
+                                    watchMap.get(uid).retries++;
+                                    Thread.sleep(5 * 1000L);
+                                    fetchEvents(emitter, resource, fieldSelector, uid, type);
+                                } else {
+                                    watchMap.get(uid).stopped = true;
+                                }
                             }
                         )
                         .doOnComplete(
@@ -426,6 +435,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         private boolean stopped;
         private final String uid;
         private long timerId;
+        private int retries;
 
         public Watch() {
             this.stopped = false;
