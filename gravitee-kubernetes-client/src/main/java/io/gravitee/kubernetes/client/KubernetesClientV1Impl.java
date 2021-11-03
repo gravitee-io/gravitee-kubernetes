@@ -330,9 +330,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                                     resource.name,
                                     resource.namespace
                                 );
-                                if (!websocket.isClosed()) {
-                                    websocket.close();
-                                }
+
                                 emitter.onError(throwable);
                                 if (watchMap.get(uid).retries < 5) {
                                     LOGGER.info(
@@ -342,6 +340,9 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                                     Thread.sleep(5 * 1000L);
                                     fetchEvents(emitter, resource, fieldSelector, uid, type);
                                 } else {
+                                    if (!websocket.isClosed()) {
+                                        websocket.close();
+                                    }
                                     watchMap.get(uid).stopped = true;
                                 }
                             }
