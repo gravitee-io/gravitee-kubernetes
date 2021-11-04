@@ -56,6 +56,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
     private final HttpClient httpClient;
     private final KubernetesConfig config;
     private final Map<String, Watch> watchMap = new ConcurrentHashMap<>();
+    private final Map<String, Flowable<? extends Event<?>>> flowableMap = new ConcurrentHashMap<>();
 
     @Autowired
     public KubernetesClientV1Impl(Vertx vertx, KubernetesConfig kubernetesConfig) {
@@ -239,9 +240,14 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         Watch watch = new Watch();
         watchMap.putIfAbsent(watch.uid, watch);
 
+        String flowableKey = fieldSelector.equals("") ? resource.namespace : resource.name;
+        if (flowableMap.containsKey(flowableKey)) {
+            return (Flowable<T>) flowableMap.get(flowableKey);
+        }
+
         LOGGER.info("Start watching namespace [{}] with fieldSelector [{}]", resource.namespace, fieldSelector);
-        return Flowable
-            .<T>create(emitter -> fetchEvents(emitter, resource, fieldSelector, watch.uid, type), BackpressureStrategy.BUFFER)
+        Flowable<T> flowable = Flowable
+            .<T>create(emitter -> fetchEvents(emitter, resource, fieldSelector, watch.uid, type), BackpressureStrategy.LATEST)
             .doOnError(
                 throwable ->
                     LOGGER.error(
@@ -251,7 +257,14 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                         resource.namespace,
                         throwable
                     )
-            );
+            )
+            .doFinally(() -> flowableMap.remove(flowableKey))
+            .publish()
+            .refCount();
+
+        flowableMap.put(flowableKey, flowable);
+
+        return flowable;
     }
 
     @Override
@@ -282,7 +295,8 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                     websocket
                         .toObservable()
                         .doOnSubscribe(
-                            disposable ->
+                            disposable -> {
+                                watchMap.get(uid).retries = 0;
                                 watchMap.get(uid).timerId =
                                     vertx.setTimer(
                                         PING_HANDLER_DELAY,
@@ -293,7 +307,8 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                                                 websocket.rxWritePing(io.vertx.reactivex.core.buffer.Buffer.buffer("ping"));
                                             }
                                         }
-                                    )
+                                    );
+                            }
                         )
                         .flatMap(
                             response -> {
@@ -305,6 +320,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                                 return Observable.just(response.toJsonObject().mapTo(type));
                             }
                         )
+                        .skip(1) // each time you connect to the API server, you get an initial ADD event representing the current resource
                         .doOnNext(emitter::onNext)
                         .doOnError(
                             throwable -> {
@@ -314,11 +330,21 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                                     resource.name,
                                     resource.namespace
                                 );
-                                if (!websocket.isClosed()) {
-                                    websocket.close();
+
+                                emitter.onError(throwable);
+                                if (watchMap.get(uid).retries < 5) {
+                                    LOGGER.info(
+                                        "An error occurred connecting to the Kubernetes API server, trying to reconnect in 5 seconds ..."
+                                    );
+                                    watchMap.get(uid).retries++;
+                                    Thread.sleep(5 * 1000L);
+                                    fetchEvents(emitter, resource, fieldSelector, uid, type);
+                                } else {
+                                    if (!websocket.isClosed()) {
+                                        websocket.close();
+                                    }
                                     watchMap.get(uid).stopped = true;
                                 }
-                                emitter.onError(throwable);
                             }
                         )
                         .doOnComplete(
@@ -412,6 +438,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         private boolean stopped;
         private final String uid;
         private long timerId;
+        private int retries;
 
         public Watch() {
             this.stopped = false;

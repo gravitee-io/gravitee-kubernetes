@@ -16,6 +16,7 @@
 package io.gravitee.kubernetes.client.spring;
 
 import io.gravitee.kubernetes.client.config.KubernetesConfig;
+import io.vertx.core.VertxOptions;
 import io.vertx.reactivex.core.Vertx;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -37,6 +38,9 @@ public class KubernetesClientConfiguration {
 
     @Bean
     public Vertx vertx() {
-        return Vertx.vertx();
+        VertxOptions options = new VertxOptions();
+        options.getMetricsOptions().setEnabled(false);
+
+        return Vertx.vertx(options);
     }
 }
