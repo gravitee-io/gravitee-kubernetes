@@ -71,8 +71,8 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         requestOptions.setMethod(HttpMethod.GET);
         requestOptions.setURI(String.format("/api/v1/namespaces/%s/secrets", namespace));
         requestOptions.addHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
-        requestOptions.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + getKubeConfig().getAccessToken());
-        return getHttpClient()
+        requestOptions.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + kubeConfig().getAccessToken());
+        return httpClient()
             .rxRequest(requestOptions)
             .flatMap(HttpClientRequest::rxSend)
             .flatMap(
@@ -118,8 +118,8 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         requestOptions.setMethod(HttpMethod.GET);
         requestOptions.setURI(String.format("/api/v1/namespaces/%s/configmaps", namespace));
         requestOptions.addHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
-        requestOptions.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + getKubeConfig().getAccessToken());
-        return getHttpClient()
+        requestOptions.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + kubeConfig().getAccessToken());
+        return httpClient()
             .rxRequest(requestOptions)
             .flatMap(HttpClientRequest::rxSend)
             .flatMap(
@@ -165,8 +165,8 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         requestOptions.setMethod(HttpMethod.GET);
         requestOptions.setURI(generateRequestUri(resource));
         requestOptions.addHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
-        requestOptions.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + getKubeConfig().getAccessToken());
-        return getHttpClient()
+        requestOptions.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + kubeConfig().getAccessToken());
+        return httpClient()
             .rxRequest(requestOptions)
             .flatMap(HttpClientRequest::rxSend)
             .toMaybe()
@@ -279,13 +279,13 @@ public class KubernetesClientV1Impl implements KubernetesClient {
     ) {
         WebSocketConnectOptions webSocketConnectOptions = new WebSocketConnectOptions()
             .setURI(watcherUrlPath(resource.namespace, fieldSelector, type))
-            .setHost(getKubeConfig().getApiServerHost())
-            .setPort(getKubeConfig().getApiServerPort())
-            .setSsl(getKubeConfig().useSSL())
+            .setHost(kubeConfig().getApiServerHost())
+            .setPort(kubeConfig().getApiServerPort())
+            .setSsl(kubeConfig().useSSL())
             .addHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
-            .addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + getKubeConfig().getAccessToken());
+            .addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + kubeConfig().getAccessToken());
 
-        getHttpClient()
+        httpClient()
             .rxWebSocket(webSocketConnectOptions)
             .flatMapObservable(
                 websocket ->
@@ -409,36 +409,34 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         return null;
     }
 
-    private synchronized KubernetesConfig getKubeConfig() {
+    private KubernetesConfig kubeConfig() {
         return KubernetesConfig.getInstance();
     }
 
-    private HttpClientOptions getHttpClientOptions() {
+    private HttpClientOptions httpClientOptions() {
         PemTrustOptions trustOptions = new PemTrustOptions();
-        if (
-            getKubeConfig().getCaCertData() == null || getKubeConfig().getApiServerHost() == null || getKubeConfig().getApiServerPort() == 0
-        ) {
+        if (kubeConfig().getCaCertData() == null || kubeConfig().getApiServerHost() == null || kubeConfig().getApiServerPort() == 0) {
             LOGGER.error(
                 "KubeConfig is not configured properly. If you are running locally make sure you already configured your kubeconfig"
             );
         }
 
-        if (getKubeConfig().getCaCertData() != null) {
-            trustOptions.addCertValue(Buffer.buffer(getKubeConfig().getCaCertData()));
+        if (kubeConfig().getCaCertData() != null) {
+            trustOptions.addCertValue(Buffer.buffer(kubeConfig().getCaCertData()));
         }
 
         return new HttpClientOptions()
             .setTrustOptions(trustOptions)
-            .setVerifyHost(getKubeConfig().verifyHost())
-            .setTrustAll(!getKubeConfig().verifyHost())
-            .setDefaultHost(getKubeConfig().getApiServerHost())
-            .setDefaultPort(getKubeConfig().getApiServerPort())
-            .setSsl(getKubeConfig().useSSL());
+            .setVerifyHost(kubeConfig().verifyHost())
+            .setTrustAll(!kubeConfig().verifyHost())
+            .setDefaultHost(kubeConfig().getApiServerHost())
+            .setDefaultPort(kubeConfig().getApiServerPort())
+            .setSsl(kubeConfig().useSSL());
     }
 
-    private synchronized HttpClient getHttpClient() {
+    private synchronized HttpClient httpClient() {
         if (this.httpClient == null) {
-            this.httpClient = vertx.createHttpClient(getHttpClientOptions());
+            this.httpClient = vertx.createHttpClient(httpClientOptions());
         }
 
         return httpClient;
