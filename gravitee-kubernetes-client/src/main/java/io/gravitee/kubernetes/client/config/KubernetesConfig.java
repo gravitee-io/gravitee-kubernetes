@@ -62,10 +62,19 @@ public class KubernetesConfig {
     private String username;
     private String password;
 
-    public KubernetesConfig() {
+    private static KubernetesConfig instance;
+
+    private KubernetesConfig() {
         if (!tryKubeConfig() && !tryServiceAccount()) {
             LOGGER.error("Unable to configure Kubernetes Config. No KubeConfig or Service account is found");
         }
+    }
+
+    public static synchronized KubernetesConfig getInstance() {
+        if (instance == null) {
+            instance = new KubernetesConfig();
+        }
+        return instance;
     }
 
     boolean tryServiceAccount() {

@@ -199,7 +199,7 @@ public class KubernetestUnitTest {
         server.init();
 
         kubernetesConfig = config(server.createClient());
-        kubernetesClient = new KubernetesClientV1Impl(vertx, kubernetesConfig);
+        kubernetesClient = new KubernetesClientV1Impl(vertx);
     }
 
     @After
@@ -211,7 +211,7 @@ public class KubernetestUnitTest {
 
     // Helper methods
     protected KubernetesConfig config(NamespacedKubernetesClient client) {
-        KubernetesConfig config = new KubernetesConfig();
+        KubernetesConfig config = KubernetesConfig.getInstance();
         config.setApiServerHost(client.getMasterUrl().getHost());
         config.setApiServerPort(client.getMasterUrl().getPort());
         config.setCaCertData(
