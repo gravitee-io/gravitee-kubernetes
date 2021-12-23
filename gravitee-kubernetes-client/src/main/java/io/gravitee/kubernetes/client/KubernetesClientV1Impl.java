@@ -47,7 +47,6 @@ import org.springframework.util.StringUtils;
  * @author GraviteeSource Team
  * @since 3.9.11
  */
-@Component
 public class KubernetesClientV1Impl implements KubernetesClient {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KubernetesClientV1Impl.class);
