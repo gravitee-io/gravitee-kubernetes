@@ -30,7 +30,7 @@
     <artifactId>gravitee-kubernetes</artifactId>
     <packaging>pom</packaging>
 
-    <version>0.2.1-SNAPSHOT</version>
+    <version>0.2.1</version>
     <name>Gravitee IO - Kubernetes</name>
 
     <scm>
@@ -51,7 +51,7 @@
 
     <properties>
         <gravitee-bom.version>1.2</gravitee-bom.version>
-        <gravitee-common.version>1.19.4</gravitee-common.version>
+        <gravitee-common.version>1.19.5</gravitee-common.version>
         <gravitee-node.version>1.11.0</gravitee-node.version>
         <gravitee-gateway.version>3.7.4</gravitee-gateway.version>
         <snakeyaml.version>1.26</snakeyaml.version>
