@@ -28,7 +28,6 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.gravitee.kubernetes</groupId>
     <artifactId>gravitee-kubernetes-client</artifactId>
     <name>Gravitee.io APIM - Kubernetes - Client</name>
 
@@ -74,6 +73,17 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.fabric8</groupId>
             <artifactId>kubernetes-server-mock</artifactId>
             <scope>test</scope>
@@ -93,15 +103,5 @@
                 <filtering>true</filtering>
             </resource>
         </resources>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <!-- Skip test for the moment, execution order make tests fail (OK using IDEA) -->
-                    <skipTests>true</skipTests>
-                </configuration>
-            </plugin>
-        </plugins>
     </build>
 </project>

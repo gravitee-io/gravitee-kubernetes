@@ -58,6 +58,7 @@
         <fabric8.version>4.11.1</fabric8.version>
         <rxjava.version>2.2.19</rxjava.version>
         <sonar.skip>true</sonar.skip>
+        <junit-vintage-engine.version>5.8.2</junit-vintage-engine.version>
     </properties>
 
     <dependencyManagement>
@@ -115,6 +116,11 @@
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
                 <version>${snakeyaml.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.vintage</groupId>
+                <artifactId>junit-vintage-engine</artifactId>
+                <version>${junit-vintage-engine.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
