@@ -16,7 +16,10 @@
 package io.gravitee.kubernetes.client;
 
 import io.fabric8.kubernetes.api.model.*;
-import io.gravitee.kubernetes.client.model.v1.SecretEvent;
+import io.gravitee.kubernetes.client.api.FieldSelector;
+import io.gravitee.kubernetes.client.api.LabelSelector;
+import io.gravitee.kubernetes.client.api.ResourceQuery;
+import io.gravitee.kubernetes.client.api.WatchQuery;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
 import io.reactivex.observers.TestObserver;
@@ -29,7 +32,9 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
 import org.junit.runner.RunWith;
 import org.reactivestreams.Subscription;
 
@@ -66,7 +71,9 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .andReturn(200, new SecretListBuilder().addToItems(secret1, secret2).withNewMetadata("1", 2L, "1234", "/selflink").build())
             .always();
 
-        final TestObserver<io.gravitee.kubernetes.client.model.v1.SecretList> obs = kubernetesClient.secretList("test").test();
+        final TestObserver<io.gravitee.kubernetes.client.model.v1.SecretList> obs = kubernetesClient
+            .get(ResourceQuery.secrets("test").build())
+            .test();
 
         obs.awaitTerminalEvent();
         obs.assertValue(
@@ -87,7 +94,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .always();
 
         final TestObserver<io.gravitee.kubernetes.client.model.v1.Secret> obs = kubernetesClient
-            .get("/test/secrets/secret1", io.gravitee.kubernetes.client.model.v1.Secret.class)
+            .get(ResourceQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build())
             .test();
 
         obs.awaitTerminalEvent();
@@ -111,13 +118,15 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .andReturn(200, new SecretBuilder(secret1).build())
             .always();
 
-        final TestObserver<String> obs = kubernetesClient.get("/test/secrets/secret1/tls.key", String.class).test();
+        final TestObserver<io.gravitee.kubernetes.client.model.v1.Secret> obs = kubernetesClient
+            .get(ResourceQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1/tls.key").build())
+            .test();
 
         obs.awaitTerminalEvent();
         obs.assertValue(
-            tlsKey -> {
-                tc.assertNotNull(tlsKey);
-                tc.assertEquals("dHNsLmtleQ==", tlsKey);
+            secret -> {
+                tc.assertNotNull(secret);
+                tc.assertEquals("dHNsLmtleQ==", new String(secret.getData().get("tls.key")));
                 return true;
             }
         );
@@ -128,7 +137,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
         server
             .expect()
             .get()
-            .withPath("/api/v1/namespaces/test/secrets?watch=true&allowWatchBookmarks=true&fieldSelector=")
+            .withPath("/api/v1/namespaces/test/secrets?watch=true")
             .andUpgradeToWebSocket()
             .open()
             .waitFor(EVENT_WAIT_PERIOD_MS)
@@ -142,7 +151,9 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .done()
             .once();
 
-        final TestSubscriber<SecretEvent> obs = kubernetesClient.watch("/test/secrets", SecretEvent.class).test();
+        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs = kubernetesClient
+            .watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets").build())
+            .test();
 
         obs.awaitTerminalEvent();
         obs.assertValueCount(4);
@@ -154,7 +165,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
         server
             .expect()
             .get()
-            .withPath("/api/v1/namespaces/test/secrets?watch=true&allowWatchBookmarks=true&fieldSelector=metadata.name=secret1")
+            .withPath("/api/v1/namespaces/test/secrets/secret1?watch=true")
             .andUpgradeToWebSocket()
             .open()
             .waitFor(EVENT_WAIT_PERIOD_MS)
@@ -164,7 +175,34 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .done()
             .once();
 
-        final TestSubscriber<SecretEvent> obs = kubernetesClient.watch("/test/secrets/secret1", SecretEvent.class).test();
+        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs = kubernetesClient
+            .watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build())
+            .test();
+
+        obs.awaitTerminalEvent();
+        obs.assertValueAt(0, secretEvent -> secretEvent.getType().equalsIgnoreCase("MODIFIED"));
+        obs.assertValueAt(1, secretEvent -> secretEvent.getType().equalsIgnoreCase("DELETED"));
+        obs.assertComplete();
+    }
+
+    @Test
+    public void shouldWatchSpecifiedSecret_usingDsl() {
+        server
+            .expect()
+            .get()
+            .withPath("/api/v1/namespaces/test/secrets/secret1?watch=true")
+            .andUpgradeToWebSocket()
+            .open()
+            .waitFor(EVENT_WAIT_PERIOD_MS)
+            .andEmit(new WatchEvent(secret1, "MODIFIED"))
+            .waitFor(EVENT_WAIT_PERIOD_MS)
+            .andEmit(new WatchEvent(secret1, "DELETED"))
+            .done()
+            .once();
+
+        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs = kubernetesClient
+            .watch(WatchQuery.secret("test", "secret1").build())
+            .test();
 
         obs.awaitTerminalEvent();
         obs.assertValueAt(0, secretEvent -> secretEvent.getType().equalsIgnoreCase("MODIFIED"));
@@ -177,7 +215,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
         server
             .expect()
             .get()
-            .withPath("/api/v1/namespaces/test/secrets?watch=true&allowWatchBookmarks=true&fieldSelector=metadata.name=secret1")
+            .withPath("/api/v1/namespaces/test/secrets/secret1?watch=true")
             .andUpgradeToWebSocket()
             .open()
             .waitFor(EVENT_WAIT_PERIOD_MS)
@@ -187,12 +225,52 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .done()
             .once();
 
-        final Flowable<SecretEvent> watch1 = kubernetesClient.watch("/test/secrets/secret1", SecretEvent.class);
-        final Flowable<SecretEvent> watch2 = kubernetesClient.watch("/test/secrets/secret1", SecretEvent.class);
-        final TestSubscriber<SecretEvent> obs = Flowable.mergeArray(watch1, watch2).test();
+        final Flowable<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> watch1 = kubernetesClient.watch(
+            WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build()
+        );
+        final Flowable<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> watch2 = kubernetesClient.watch(
+            WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build()
+        );
+        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs = Flowable
+            .mergeArray(watch1, watch2)
+            .test();
 
         obs.awaitTerminalEvent();
         obs.assertValueCount(4);
+        obs.assertComplete();
+    }
+
+    @Test
+    public void shouldWatchSecretWithLabelAndFieldSelectors() throws InterruptedException {
+        server
+            .expect()
+            .get()
+            .withPath(
+                "/api/v1/namespaces/test/secrets/secret1?fieldSelector=field1%3DvalueField1,field2%3DvalueField2&labelSelector=label1%3DvalueLabel1,label2%3DvalueLabel2&watch=true"
+            )
+            .andUpgradeToWebSocket()
+            .open()
+            .waitFor(EVENT_WAIT_PERIOD_MS)
+            .andEmit(new WatchEvent(secret1, "MODIFIED"))
+            .waitFor(EVENT_WAIT_PERIOD_MS)
+            .andEmit(new WatchEvent(secret2, "MODIFIED"))
+            .done()
+            .once();
+
+        final Flowable<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> watch1 = kubernetesClient.watch(
+            WatchQuery
+                .<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1")
+                .fieldSelector(FieldSelector.equals("field1", "valueField1"))
+                .fieldSelector(FieldSelector.equals("field2", "valueField2"))
+                .labelSelector(LabelSelector.equals("label1", "valueLabel1"))
+                .labelSelector(LabelSelector.equals("label2", "valueLabel2"))
+                .build()
+        );
+
+        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs = watch1.test();
+
+        obs.awaitTerminalEvent();
+        obs.assertValueCount(2);
         obs.assertComplete();
     }
 
@@ -201,7 +279,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
         server
             .expect()
             .get()
-            .withPath("/api/v1/namespaces/test/secrets?watch=true&allowWatchBookmarks=true&fieldSelector=metadata.name=secret1")
+            .withPath("/api/v1/namespaces/test/secrets/secret1?watch=true")
             .andUpgradeToWebSocket()
             .open()
             .waitFor(EVENT_WAIT_PERIOD_MS)
@@ -214,7 +292,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
         server
             .expect()
             .get()
-            .withPath("/api/v1/namespaces/test/secrets?watch=true&allowWatchBookmarks=true&fieldSelector=metadata.name=secret1")
+            .withPath("/api/v1/namespaces/test/secrets/secret1?watch=true")
             .andUpgradeToWebSocket()
             .open()
             .waitFor(EVENT_WAIT_PERIOD_MS)
@@ -224,14 +302,16 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .done()
             .once();
 
-        final Flowable<SecretEvent> watch1 = kubernetesClient
-            .watch("/test/secrets/secret1", SecretEvent.class)
+        final Flowable<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> watch1 = kubernetesClient
+            .watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build())
             .doOnSubscribe(Subscription::cancel);
-        final Flowable<SecretEvent> watch2 = kubernetesClient.watch("/test/secrets/secret1", SecretEvent.class);
+        final Flowable<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> watch2 = kubernetesClient.watch(
+            WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build()
+        );
 
-        final TestSubscriber<SecretEvent> obs1 = watch1.test();
-        final TestSubscriber<SecretEvent> obs2 = watch2.test();
-        //obs1.awaitTerminalEvent();
+        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs1 = watch1.test();
+        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs2 = watch2.test();
+
         obs1.assertEmpty();
 
         obs2.awaitTerminalEvent();
@@ -244,7 +324,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
         server
             .expect()
             .get()
-            .withPath("/api/v1/namespaces/test/secrets?watch=true&allowWatchBookmarks=true&fieldSelector=metadata.name=secret1")
+            .withPath("/api/v1/namespaces/test/secrets/secret1?watch=true")
             .andUpgradeToWebSocket()
             .open()
             .waitFor(EVENT_WAIT_PERIOD_MS)
@@ -257,7 +337,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
         server
             .expect()
             .get()
-            .withPath("/api/v1/namespaces/test/secrets?watch=true&allowWatchBookmarks=true&fieldSelector=metadata.name=secret2")
+            .withPath("/api/v1/namespaces/test/secrets/secret2?watch=true")
             .andUpgradeToWebSocket()
             .open()
             .waitFor(EVENT_WAIT_PERIOD_MS)
@@ -265,9 +345,15 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .done()
             .once();
 
-        final Flowable<SecretEvent> watch1 = kubernetesClient.watch("/test/secrets/secret1", SecretEvent.class);
-        final Flowable<SecretEvent> watch2 = kubernetesClient.watch("/test/secrets/secret2", SecretEvent.class);
-        final TestSubscriber<SecretEvent> obs = Flowable.mergeArray(watch1, watch2).test();
+        final Flowable<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> watch1 = kubernetesClient.watch(
+            WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build()
+        );
+        final Flowable<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> watch2 = kubernetesClient.watch(
+            WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret2").build()
+        );
+        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs = Flowable
+            .mergeArray(watch1, watch2)
+            .test();
 
         obs.awaitTerminalEvent();
         obs.assertValueCount(3);
@@ -275,11 +361,11 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
     }
 
     @Test
-    public void testWatchSecretsWithError() {
+    public void shouldCompleteWatchSecretsAfterError() {
         server
             .expect()
             .get()
-            .withPath("/api/v1/namespaces/test/secrets?watch=true&allowWatchBookmarks=true&fieldSelector=metadata.name=secret1")
+            .withPath("/api/v1/namespaces/test/secrets/secret1?watch=true")
             .andUpgradeToWebSocket()
             .open()
             .waitFor(EVENT_WAIT_PERIOD_MS)
@@ -289,8 +375,8 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .done()
             .once();
 
-        final TestSubscriber<SecretEvent> obs = kubernetesClient
-            .watch("/test/secrets/secret1", SecretEvent.class)
+        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs = kubernetesClient
+            .watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build())
             .flatMapSingle(e -> !e.getType().equalsIgnoreCase("ERROR") ? Single.just(e) : Single.error(new Exception("fake error")))
             .test();
 
@@ -305,7 +391,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
         server
             .expect()
             .get()
-            .withPath("/api/v1/namespaces/test/secrets?watch=true&allowWatchBookmarks=true&fieldSelector=metadata.name=secret1")
+            .withPath("/api/v1/namespaces/test/secrets/secret1?watch=true")
             .andUpgradeToWebSocket()
             .open()
             .waitFor(EVENT_WAIT_PERIOD_MS)
@@ -319,7 +405,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
         server
             .expect()
             .get()
-            .withPath("/api/v1/namespaces/test/secrets?watch=true&allowWatchBookmarks=true&fieldSelector=metadata.name=secret1")
+            .withPath("/api/v1/namespaces/test/secrets/secret1?watch=true")
             .andUpgradeToWebSocket()
             .open()
             .waitFor(EVENT_WAIT_PERIOD_MS)
@@ -327,10 +413,10 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .done()
             .once();
 
-        final TestSubscriber<SecretEvent> obs = kubernetesClient
-            .watch("/test/secrets/secret1", SecretEvent.class)
+        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs = kubernetesClient
+            .watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build())
             .flatMapSingle(e -> !e.getType().equalsIgnoreCase("ERROR") ? Single.just(e) : Single.error(new Exception("fake error")))
-            .retry()
+            .retry(2)
             .test();
 
         obs.awaitTerminalEvent();
@@ -344,8 +430,12 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
         // Shutdown the server to force reconnection.
         server.shutdown();
 
-        final TestSubscriber<SecretEvent> obs = kubernetesClient
-            .watch("/test/secrets/secret1", SecretEvent.class)
+        Flowable<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> watch = kubernetesClient.watch(
+            WatchQuery.secret("test", "secret1").build()
+        );
+
+        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs = kubernetesClient
+            .watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build())
             .retryWhen(
                 errors -> {
                     AtomicInteger counter = new AtomicInteger(0);

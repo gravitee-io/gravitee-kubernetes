@@ -17,6 +17,7 @@ package io.gravitee.kubernetes.client;
 
 import io.fabric8.kubernetes.client.server.mock.KubernetesMockServer;
 import io.gravitee.kubernetes.client.config.KubernetesConfig;
+import io.gravitee.kubernetes.client.impl.KubernetesClientV1Impl;
 import io.vertx.reactivex.core.Vertx;
 import org.junit.After;
 import org.junit.Before;
@@ -45,7 +46,7 @@ public abstract class KubernetesUnitTest {
     @After
     public void after() {
         vertx.exceptionHandler(null);
-        kubernetesClient.stop();
+        //    kubernetesClient.stop();
         server.destroy();
         vertx.close();
     }

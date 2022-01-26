@@ -13,22 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.gravitee.kubernetes.client;
+package io.gravitee.kubernetes.client.model.v1;
 
-import io.gravitee.kubernetes.client.api.ResourceQuery;
-import io.gravitee.kubernetes.client.api.WatchQuery;
-import io.gravitee.kubernetes.client.model.v1.Event;
-import io.gravitee.kubernetes.client.model.v1.Watchable;
-import io.reactivex.Flowable;
-import io.reactivex.Maybe;
-
-/**
- * @author Kamiel Ahmadpour (kamiel.ahmadpour at graviteesource.com)
- * @author GraviteeSource Team
- * @since 3.9.11
- */
-public interface KubernetesClient {
-    <T> Maybe<T> get(ResourceQuery<T> query);
-
-    <E extends Event<? extends Watchable>> Flowable<E> watch(WatchQuery<E> query);
-}
+public interface Watchable {}

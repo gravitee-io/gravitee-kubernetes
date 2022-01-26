@@ -13,24 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.gravitee.kubernetes.client.spring;
+package io.gravitee.kubernetes.client.model.v1;
 
-import io.gravitee.kubernetes.client.KubernetesClient;
-import io.gravitee.kubernetes.client.impl.KubernetesClientV1Impl;
-import io.vertx.reactivex.core.Vertx;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
-/**
- * @author Kamiel Ahmadpour (kamiel.ahmadpour at graviteesource.com)
- * @author GraviteeSource Team
- * @since 3.9.11
- */
-@Configuration
-public class KubernetesClientConfiguration {
-
-    @Bean
-    public KubernetesClient kubernetesClient(Vertx vertx) {
-        return new KubernetesClientV1Impl(vertx);
-    }
+public interface DataHolder {
+    Data getData();
 }

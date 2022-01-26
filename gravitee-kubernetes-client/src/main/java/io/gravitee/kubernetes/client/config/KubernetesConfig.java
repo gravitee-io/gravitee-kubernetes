@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Locale;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.util.StringUtils;
 
 /**
  * @author Kamiel Ahmadpour (kamiel.ahmadpour at graviteesource.com)
@@ -89,7 +88,7 @@ public class KubernetesConfig {
         String host = getSystemPropertyOrEnvVar(KUBERNETES_SERVICE_HOST_PROPERTY, null);
         String port = getSystemPropertyOrEnvVar(KUBERNETES_SERVICE_PORT_HTTPS_PROPERTY, null);
 
-        if (StringUtils.hasText(host) && StringUtils.hasText(port)) {
+        if (host != null && !host.isEmpty() && port != null && !port.isEmpty()) {
             LOGGER.debug("Found API Server host and port: {}:{}", host, port);
 
             setApiServerHost(host);
@@ -184,7 +183,7 @@ public class KubernetesConfig {
 
     private <T> String getSystemPropertyOrEnvVar(String propertyName, T defaultValue) {
         String value = System.getProperty(propertyName);
-        if (StringUtils.hasText(value)) {
+        if (value != null && !value.isEmpty()) {
             return value;
         }
 
@@ -383,7 +382,7 @@ public class KubernetesConfig {
     }
 
     public void setMasterUrl(String masterUrl) {
-        if (StringUtils.hasText(masterUrl)) {
+        if (masterUrl != null && !masterUrl.isEmpty()) {
             this.masterUrl = masterUrl;
             this.setApiServerHost(masterUrl.substring(8, masterUrl.lastIndexOf(":"))); // skip initial "https://"
             this.setApiServerPort(Integer.parseInt(masterUrl.substring(masterUrl.lastIndexOf(':') + 1)));
