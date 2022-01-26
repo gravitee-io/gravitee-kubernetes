@@ -25,7 +25,7 @@ import java.util.Map;
  * @since 3.9.11
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Secret implements Serializable {
+public class Secret implements Serializable, Watchable {
 
     private String apiVersion = "v1";
     private Map<String, String> data;

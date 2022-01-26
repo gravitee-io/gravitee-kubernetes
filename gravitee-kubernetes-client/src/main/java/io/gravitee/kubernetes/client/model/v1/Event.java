@@ -23,7 +23,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  * @since 3.9.11
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Event<T> {
+public class Event<T extends Watchable> {
 
     private String type;
     private T object;
