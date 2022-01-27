@@ -17,12 +17,15 @@ package io.gravitee.kubernetes.client;
 
 import io.gravitee.common.http.HttpHeaders;
 import io.gravitee.common.http.MediaType;
-import io.gravitee.common.utils.UUID;
 import io.gravitee.kubernetes.client.config.KubernetesConfig;
 import io.gravitee.kubernetes.client.exception.ResourceNotFoundException;
 import io.gravitee.kubernetes.client.model.v1.*;
-import io.reactivex.*;
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Flowable;
+import io.reactivex.Maybe;
+import io.reactivex.Single;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpMethod;
@@ -38,7 +41,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
@@ -47,7 +49,6 @@ import org.springframework.util.StringUtils;
  * @author GraviteeSource Team
  * @since 3.9.11
  */
-@Component
 public class KubernetesClientV1Impl implements KubernetesClient {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KubernetesClientV1Impl.class);
@@ -55,7 +56,6 @@ public class KubernetesClientV1Impl implements KubernetesClient {
     private final Vertx vertx;
     private HttpClient httpClient;
     private final Map<String, Watch> watchMap = new ConcurrentHashMap<>();
-    private final Map<String, Flowable<? extends Event<?>>> flowableMap = new ConcurrentHashMap<>();
 
     @Autowired
     public KubernetesClientV1Impl(Vertx vertx) {
@@ -73,40 +73,40 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         requestOptions.addHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
         requestOptions.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + kubeConfig().getAccessToken());
         return httpClient()
-            .rxRequest(requestOptions)
-            .flatMap(HttpClientRequest::rxSend)
-            .flatMap(
-                response -> {
-                    if (response.statusCode() != 200) {
-                        return Single.error(
-                            new RuntimeException(
-                                String.format(
-                                    "Unable to retrieve list of secrets from namespace %s. error code %d",
-                                    namespace,
-                                    response.statusCode()
-                                )
-                            )
-                        );
-                    } else {
-                        return response
-                            .rxBody()
-                            .flatMap(
-                                buffer -> {
-                                    SecretList secretList = buffer.toJsonObject().mapTo(SecretList.class);
-                                    if (secretList == null) {
-                                        return Single.error(
-                                            new ResourceNotFoundException(
-                                                String.format("Unable to retrieve list of secrets from namespace %s", namespace)
-                                            )
+                .rxRequest(requestOptions)
+                .flatMap(HttpClientRequest::rxSend)
+                .flatMap(
+                        response -> {
+                            if (response.statusCode() != 200) {
+                                return Single.error(
+                                        new RuntimeException(
+                                                String.format(
+                                                        "Unable to retrieve list of secrets from namespace %s. error code %d",
+                                                        namespace,
+                                                        response.statusCode()
+                                                )
+                                        )
+                                );
+                            } else {
+                                return response
+                                        .rxBody()
+                                        .flatMap(
+                                                buffer -> {
+                                                    SecretList secretList = buffer.toJsonObject().mapTo(SecretList.class);
+                                                    if (secretList == null) {
+                                                        return Single.error(
+                                                                new ResourceNotFoundException(
+                                                                        String.format("Unable to retrieve list of secrets from namespace %s", namespace)
+                                                                )
+                                                        );
+                                                    } else {
+                                                        return Single.just(secretList);
+                                                    }
+                                                }
                                         );
-                                    } else {
-                                        return Single.just(secretList);
-                                    }
-                                }
-                            );
-                    }
-                }
-            );
+                            }
+                        }
+                );
     }
 
     @Override
@@ -120,40 +120,40 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         requestOptions.addHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
         requestOptions.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + kubeConfig().getAccessToken());
         return httpClient()
-            .rxRequest(requestOptions)
-            .flatMap(HttpClientRequest::rxSend)
-            .flatMap(
-                response -> {
-                    if (response.statusCode() != 200) {
-                        return Single.error(
-                            new RuntimeException(
-                                String.format(
-                                    "Unable to retrieve list of configmaps from namespace %s. error code %d",
-                                    namespace,
-                                    response.statusCode()
-                                )
-                            )
-                        );
-                    } else {
-                        return response
-                            .rxBody()
-                            .flatMap(
-                                buffer -> {
-                                    ConfigMapList configMapList = buffer.toJsonObject().mapTo(ConfigMapList.class);
-                                    if (configMapList == null) {
-                                        return Single.error(
-                                            new ResourceNotFoundException(
-                                                String.format("Unable to retrieve list of configmaps from namespace %s", namespace)
-                                            )
+                .rxRequest(requestOptions)
+                .flatMap(HttpClientRequest::rxSend)
+                .flatMap(
+                        response -> {
+                            if (response.statusCode() != 200) {
+                                return Single.error(
+                                        new RuntimeException(
+                                                String.format(
+                                                        "Unable to retrieve list of configmaps from namespace %s. error code %d",
+                                                        namespace,
+                                                        response.statusCode()
+                                                )
+                                        )
+                                );
+                            } else {
+                                return response
+                                        .rxBody()
+                                        .flatMap(
+                                                buffer -> {
+                                                    ConfigMapList configMapList = buffer.toJsonObject().mapTo(ConfigMapList.class);
+                                                    if (configMapList == null) {
+                                                        return Single.error(
+                                                                new ResourceNotFoundException(
+                                                                        String.format("Unable to retrieve list of configmaps from namespace %s", namespace)
+                                                                )
+                                                        );
+                                                    } else {
+                                                        return Single.just(configMapList);
+                                                    }
+                                                }
                                         );
-                                    } else {
-                                        return Single.just(configMapList);
-                                    }
-                                }
-                            );
-                    }
-                }
-            );
+                            }
+                        }
+                );
     }
 
     @Override
@@ -167,201 +167,184 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         requestOptions.addHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
         requestOptions.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + kubeConfig().getAccessToken());
         return httpClient()
-            .rxRequest(requestOptions)
-            .flatMap(HttpClientRequest::rxSend)
-            .toMaybe()
-            .flatMap(
-                response -> {
-                    if (response.statusCode() != 200) {
-                        return Maybe.error(
-                            new RuntimeException(
-                                String.format(
-                                    "Unable to retrieve %s %s from namespace %s. error code %d",
-                                    resource.type.value,
-                                    resource.name,
-                                    resource.namespace,
-                                    response.statusCode()
-                                )
-                            )
-                        );
-                    } else {
-                        return response
-                            .rxBody()
-                            .toMaybe()
-                            .flatMap(
-                                buffer -> {
-                                    JsonObject item = buffer.toJsonObject();
-                                    T data = null;
-                                    if (resource.key == null) {
-                                        data = item.mapTo(type);
-                                    } else {
-                                        if (!type.equals(String.class)) {
-                                            return Maybe.error(
-                                                new RuntimeException(
-                                                    "Only String.class is suppoerted when getting a specific key inside a ConfigMap or Secret ..."
+                .rxRequest(requestOptions)
+                .flatMap(HttpClientRequest::rxSend)
+                .toMaybe()
+                .flatMap(
+                        response -> {
+                            if (response.statusCode() != 200) {
+                                return Maybe.error(
+                                        new RuntimeException(
+                                                String.format(
+                                                        "Unable to retrieve %s %s from namespace %s. error code %d",
+                                                        resource.type.value,
+                                                        resource.name,
+                                                        resource.namespace,
+                                                        response.statusCode()
                                                 )
-                                            );
-                                        }
+                                        )
+                                );
+                            } else {
+                                return response
+                                        .rxBody()
+                                        .toMaybe()
+                                        .flatMap(
+                                                buffer -> {
+                                                    JsonObject item = buffer.toJsonObject();
+                                                    T data = null;
+                                                    if (resource.key == null) {
+                                                        data = item.mapTo(type);
+                                                    } else {
+                                                        if (!type.equals(String.class)) {
+                                                            return Maybe.error(
+                                                                    new RuntimeException(
+                                                                            "Only String.class is supported when getting a specific key inside a ConfigMap or Secret ..."
+                                                                    )
+                                                            );
+                                                        }
 
-                                        String kind = item.getString("kind");
-                                        if (kind.equals("ConfigMap")) {
-                                            data = (T) item.mapTo(ConfigMap.class).getData().get(resource.key);
-                                        } else if (kind.equals("Secret")) {
-                                            data = (T) item.mapTo(Secret.class).getData().get(resource.key);
-                                        }
-                                    }
+                                                        String kind = item.getString("kind");
+                                                        if (kind.equals("ConfigMap")) {
+                                                            data = (T) item.mapTo(ConfigMap.class).getData().get(resource.key);
+                                                        } else if (kind.equals("Secret")) {
+                                                            data = (T) item.mapTo(Secret.class).getData().get(resource.key);
+                                                        }
+                                                    }
 
-                                    if (data == null) {
-                                        LOGGER.error(
-                                            "Unable to retrieve {} {} from namespace {}",
-                                            resource.type.value,
-                                            resource.name,
-                                            resource.namespace
+                                                    if (data == null) {
+                                                        LOGGER.error(
+                                                                "Unable to retrieve {} {} from namespace {}",
+                                                                resource.type.value,
+                                                                resource.name,
+                                                                resource.namespace
+                                                        );
+                                                        return Maybe.empty();
+                                                    } else {
+                                                        return Maybe.just(data);
+                                                    }
+                                                }
                                         );
-                                        return Maybe.empty();
-                                    } else {
-                                        return Maybe.just(data);
-                                    }
-                                }
-                            );
-                    }
-                }
-            );
+                            }
+                        }
+                );
     }
 
+    /** @noinspection unchecked*/
     @Override
     public <T extends Event<?>> Flowable<T> watch(String location, Class<T> type) {
         KubernetesResource resource = new KubernetesResource(location);
 
         String fieldSelector = resource.name == null ? "" : String.format("metadata.name=%s", resource.name);
-        Watch watch = new Watch();
-        watchMap.putIfAbsent(watch.uid, watch);
+        String watchKey = location + "#" + fieldSelector;
 
-        String flowableKey = fieldSelector.equals("") ? resource.namespace : resource.name;
-        if (flowableMap.containsKey(flowableKey)) {
-            return (Flowable<T>) flowableMap.get(flowableKey);
-        }
+        final Watch<T> watch = watchMap.computeIfAbsent(
+                watchKey,
+                s -> {
+                    final Watch<T> w = watchEvents(resource, fieldSelector, watchKey, type);
+                    w.setEvents(w.events.doFinally(() -> watchMap.remove(watchKey)));
+                    return w;
+                }
+        );
 
-        LOGGER.info("Start watching namespace [{}] with fieldSelector [{}]", resource.namespace, fieldSelector);
-        Flowable<T> flowable = Flowable
-            .<T>create(emitter -> fetchEvents(emitter, resource, fieldSelector, watch.uid, type), BackpressureStrategy.LATEST)
-            .doOnError(
-                throwable ->
-                    LOGGER.error(
-                        "An error occurred watching {} {} in namespace {}",
-                        resource.type,
-                        resource.name,
-                        resource.namespace,
-                        throwable
-                    )
-            )
-            .doFinally(() -> flowableMap.remove(flowableKey))
-            .publish()
-            .refCount();
-
-        flowableMap.put(flowableKey, flowable);
-
-        return flowable;
+        return watch.events;
     }
 
     @Override
     public Future<Void> stop() {
-        watchMap.forEach((k, v) -> v.stopped = true);
-        return Future.succeededFuture();
+        final Promise<Void> promise = Promise.promise();
+
+        httpClient.close(
+                event -> {
+                    if (event.succeeded()) {
+                        promise.complete();
+                    } else {
+                        promise.fail(event.cause());
+                    }
+                }
+        );
+
+        watchMap.clear();
+
+        return promise.future();
     }
 
-    private <T extends Event<?>> void fetchEvents(
-        FlowableEmitter<T> emitter,
-        KubernetesResource resource,
-        String fieldSelector,
-        String uid,
-        Class<T> type
-    ) {
-        WebSocketConnectOptions webSocketConnectOptions = new WebSocketConnectOptions()
-            .setURI(watcherUrlPath(resource.namespace, fieldSelector, type))
-            .setHost(kubeConfig().getApiServerHost())
-            .setPort(kubeConfig().getApiServerPort())
-            .setSsl(kubeConfig().useSSL())
-            .addHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
-            .addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + kubeConfig().getAccessToken());
+    private <T extends Event<?>> Watch<T> watchEvents(KubernetesResource resource, String fieldSelector, String watchKey, Class<T> type) {
+        LOGGER.info("Start watching namespace [{}] with fieldSelector [{}]", resource.namespace, fieldSelector);
 
-        httpClient()
-            .rxWebSocket(webSocketConnectOptions)
-            .flatMapObservable(
-                websocket ->
-                    websocket
-                        .toObservable()
-                        .doOnSubscribe(
-                            disposable -> {
-                                watchMap.get(uid).retries = 0;
-                                watchMap.get(uid).timerId =
-                                    vertx.setTimer(
-                                        PING_HANDLER_DELAY,
-                                        aLong -> {
-                                            if (watchMap.get(uid).stopped) {
-                                                websocket.close();
-                                            } else {
-                                                websocket.rxWritePing(io.vertx.reactivex.core.buffer.Buffer.buffer("ping"));
-                                            }
-                                        }
-                                    );
-                            }
-                        )
-                        .flatMap(
-                            response -> {
-                                if (watchMap.get(uid).stopped) {
-                                    websocket.close();
-                                    return Observable.empty();
-                                }
+        final Watch<T> watch = new Watch<>(watchKey);
+        final WebSocketConnectOptions webSocketConnectOptions = buildWebSocketConnectOptions(resource, fieldSelector, type);
 
-                                return Observable.just(response.toJsonObject().mapTo(type));
-                            }
-                        )
-                        .skip(1) // each time you connect to the API server, you get an initial ADD event representing the current resource
-                        .doOnNext(emitter::onNext)
-                        .doOnError(
-                            throwable -> {
+        final Flowable<T> events = Flowable
+                .<T>create(
+                        emitter -> {
+                            httpClient()
+                                    .rxWebSocket(webSocketConnectOptions)
+                                    .flatMapPublisher(
+                                            websocket ->
+                                                    websocket
+                                                            .toFlowable()
+                                                            .map(response -> response.toJsonObject().mapTo(type))
+                                                            .doOnSubscribe(
+                                                                    disposable ->
+                                                                            // Periodically send a ping frame to maintain the connection up.
+                                                                            watch.timerId =
+                                                                                    vertx.setPeriodic(
+                                                                                            PING_HANDLER_DELAY,
+                                                                                            aLong ->
+                                                                                                    websocket
+                                                                                                            .rxWritePing(io.vertx.reactivex.core.buffer.Buffer.buffer("ping"))
+                                                                                                            .subscribe(
+                                                                                                                    () -> LOGGER.debug("Ping sent to the Kubernetes websocket"),
+                                                                                                                    t -> {
+                                                                                                                        LOGGER.error("Unable to ping the Kubernetes websocket. Closing...");
+                                                                                                                        websocket.close();
+                                                                                                                        emitter.tryOnError(t);
+                                                                                                                    }
+                                                                                                            )
+                                                                                    )
+                                                            )
+                                                            .doOnComplete(emitter::onComplete)
+                                                            .doFinally(
+                                                                    () -> {
+                                                                        vertx.cancelTimer(watch.timerId);
+                                                                        websocket.close();
+                                                                    }
+                                                            )
+                                    )
+                                    .subscribe(emitter::onNext, emitter::tryOnError);
+                        },
+                        BackpressureStrategy.LATEST
+                )
+                .doOnError(
+                        throwable ->
                                 LOGGER.error(
-                                    "An error occurred watching {} {} in namespace {}, This watcher is stopped",
-                                    resource.type,
-                                    resource.name,
-                                    resource.namespace
-                                );
+                                        "An error occurred watching {} {} in namespace {}",
+                                        resource.type,
+                                        resource.name,
+                                        resource.namespace,
+                                        throwable
+                                )
+                )
+                .publish()
+                .refCount();
 
-                                emitter.onError(throwable);
-                                if (watchMap.get(uid).retries < 5) {
-                                    LOGGER.info(
-                                        "An error occurred connecting to the Kubernetes API server, trying to reconnect in 5 seconds ..."
-                                    );
-                                    watchMap.get(uid).retries++;
-                                    Thread.sleep(5 * 1000L);
-                                    fetchEvents(emitter, resource, fieldSelector, uid, type);
-                                } else {
-                                    if (!websocket.isClosed()) {
-                                        websocket.close();
-                                    }
-                                    watchMap.get(uid).stopped = true;
-                                }
-                            }
-                        )
-                        .doOnComplete(
-                            () -> {
-                                if (!watchMap.get(uid).stopped) {
-                                    fetchEvents(emitter, resource, fieldSelector, uid, type);
-                                }
-                            }
-                        )
-                        .doFinally(
-                            () -> {
-                                if (watchMap.get(uid).stopped) {
-                                    vertx.cancelTimer(watchMap.get(uid).timerId);
-                                    watchMap.remove(uid);
-                                    emitter.onComplete();
-                                }
-                            }
-                        )
-            )
-            .subscribe();
+        watch.setEvents(events);
+
+        return watch;
+    }
+
+    private <T extends Event<?>> WebSocketConnectOptions buildWebSocketConnectOptions(
+            KubernetesResource resource,
+            String fieldSelector,
+            Class<T> type
+    ) {
+        return new WebSocketConnectOptions()
+                .setURI(watcherUrlPath(resource.namespace, fieldSelector, type))
+                .setHost(kubeConfig().getApiServerHost())
+                .setPort(kubeConfig().getApiServerPort())
+                .setSsl(kubeConfig().useSSL())
+                .addHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
+                .addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + kubeConfig().getAccessToken());
     }
 
     private String generateRequestUri(KubernetesResource resource) {
@@ -382,27 +365,27 @@ public class KubernetesClientV1Impl implements KubernetesClient {
 
         if (type.equals(ConfigMapEvent.class)) {
             return (
-                "/api/v1/namespaces/" +
-                namespace +
-                "/configmaps?" +
-                "watch=true" +
-                "&" +
-                "allowWatchBookmarks=true" +
-                "&" +
-                "fieldSelector=" +
-                fieldSelector
+                    "/api/v1/namespaces/" +
+                            namespace +
+                            "/configmaps?" +
+                            "watch=true" +
+                            "&" +
+                            "allowWatchBookmarks=true" +
+                            "&" +
+                            "fieldSelector=" +
+                            fieldSelector
             );
         } else if (type.equals(SecretEvent.class)) {
             return (
-                "/api/v1/namespaces/" +
-                namespace +
-                "/secrets?" +
-                "watch=true" +
-                "&" +
-                "allowWatchBookmarks=true" +
-                "&" +
-                "fieldSelector=" +
-                fieldSelector
+                    "/api/v1/namespaces/" +
+                            namespace +
+                            "/secrets?" +
+                            "watch=true" +
+                            "&" +
+                            "allowWatchBookmarks=true" +
+                            "&" +
+                            "fieldSelector=" +
+                            fieldSelector
             );
         }
 
@@ -417,7 +400,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         PemTrustOptions trustOptions = new PemTrustOptions();
         if (kubeConfig().getCaCertData() == null || kubeConfig().getApiServerHost() == null || kubeConfig().getApiServerPort() == 0) {
             LOGGER.error(
-                "KubeConfig is not configured properly. If you are running locally make sure you already configured your kubeconfig"
+                    "KubeConfig is not configured properly. If you are running locally make sure you already configured your kubeconfig"
             );
         }
 
@@ -426,12 +409,12 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         }
 
         return new HttpClientOptions()
-            .setTrustOptions(trustOptions)
-            .setVerifyHost(kubeConfig().verifyHost())
-            .setTrustAll(!kubeConfig().verifyHost())
-            .setDefaultHost(kubeConfig().getApiServerHost())
-            .setDefaultPort(kubeConfig().getApiServerPort())
-            .setSsl(kubeConfig().useSSL());
+                .setTrustOptions(trustOptions)
+                .setVerifyHost(kubeConfig().verifyHost())
+                .setTrustAll(!kubeConfig().verifyHost())
+                .setDefaultHost(kubeConfig().getApiServerHost())
+                .setDefaultPort(kubeConfig().getApiServerPort())
+                .setSsl(kubeConfig().useSSL());
     }
 
     private synchronized HttpClient httpClient() {
@@ -442,16 +425,26 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         return httpClient;
     }
 
-    private static class Watch {
+    private static class Watch<T extends Event<?>> {
 
-        private boolean stopped;
-        private final String uid;
+        private final String key;
         private long timerId;
-        private int retries;
+        private Flowable<T> events;
 
-        public Watch() {
-            this.stopped = false;
-            this.uid = UUID.random().toString();
+        public Watch(String key) {
+            this.key = key;
+        }
+
+        public Flowable<T> getEvents() {
+            return events;
+        }
+
+        public void setEvents(Flowable<T> events) {
+            this.events = events;
+        }
+
+        public String getKey() {
+            return key;
         }
     }
 

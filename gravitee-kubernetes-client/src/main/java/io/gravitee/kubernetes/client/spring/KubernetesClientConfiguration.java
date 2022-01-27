@@ -15,10 +15,10 @@
  */
 package io.gravitee.kubernetes.client.spring;
 
-import io.vertx.core.VertxOptions;
+import io.gravitee.kubernetes.client.KubernetesClient;
+import io.gravitee.kubernetes.client.KubernetesClientV1Impl;
 import io.vertx.reactivex.core.Vertx;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
 /**
@@ -27,14 +27,10 @@ import org.springframework.context.annotation.Configuration;
  * @since 3.9.11
  */
 @Configuration
-@ComponentScan(basePackages = { "io.gravitee.kubernetes.client" })
 public class KubernetesClientConfiguration {
 
     @Bean
-    public Vertx vertx() {
-        VertxOptions options = new VertxOptions();
-        options.getMetricsOptions().setEnabled(false);
-
-        return Vertx.vertx(options);
+    public KubernetesClient kubernetesClient(Vertx vertx) {
+        return new KubernetesClientV1Impl(vertx);
     }
 }
