@@ -52,7 +52,7 @@
         <gravitee-bom.version>2.4</gravitee-bom.version>
         <gravitee-common.version>1.25.0</gravitee-common.version>
         <gravitee-node.version>1.11.0</gravitee-node.version>
-        <gravitee-gateway.version>3.7.4</gravitee-gateway.version>
+        <gravitee-gateway.version>3.10.0</gravitee-gateway.version>
         <snakeyaml.version>1.26</snakeyaml.version>
         <fabric8.version>4.11.1</fabric8.version>
         <rxjava.version>2.2.19</rxjava.version>
