@@ -40,8 +40,9 @@ public class KubernetesConfig {
 
     public static final String KUBERNETES_SERVICE_HOST_PROPERTY = "KUBERNETES_SERVICE_HOST";
     public static final String KUBERNETES_SERVICE_PORT_HTTPS_PROPERTY = "KUBERNETES_SERVICE_PORT_HTTPS";
-    public static final String KUBERNETES_SERVICE_ACCOUNT_TOKEN_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/token";
-    public static final String KUBERNETES_SERVICE_ACCOUNT_CA_CRT_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt";
+    public static final String KUBERNETES_SERVICE_ACCOUNT_TOKEN_PATH = "KUBERNETES_SERVICE_ACCOUNT_TOKEN_PATH";
+    public static final String KUBERNETES_SERVICE_ACCOUNT_CA_CRT_PATH = "KUBERNETES_SERVICE_ACCOUNT_CA_CRT_PATH";
+    public static final String KUBERNETES_CURRENT_NAMESPACE_PATH = "KUBERNETES_CURRENT_NAMESPACE";
     public static final String KUBERNETES_KUBECONFIG_FILE = "kubeconfig";
     public static final Long DEFAULT_WEBSOCKET_TIMEOUT = 5 * 60 * 1000L;
 
@@ -51,6 +52,7 @@ public class KubernetesConfig {
     private boolean verifyHost = true;
     private boolean useSSL = true;
     private String accessToken;
+    private String currentNamespace;
     private long websocketTimeout = DEFAULT_WEBSOCKET_TIMEOUT;
 
     private String masterUrl;
@@ -104,18 +106,22 @@ public class KubernetesConfig {
      * Load the Kubernetes CA from within the pod
      */
     private boolean loadKubernetesCaFile() {
+        String caFilePath = getSystemPropertyOrEnvVar(
+            KUBERNETES_SERVICE_ACCOUNT_CA_CRT_PATH,
+            "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+        );
         try {
-            boolean serviceAccountCaCertExists = Files.isRegularFile(new File(KUBERNETES_SERVICE_ACCOUNT_CA_CRT_PATH).toPath());
+            boolean serviceAccountCaCertExists = Files.isRegularFile(new File(caFilePath).toPath());
             if (serviceAccountCaCertExists) {
-                LOGGER.debug("Found service account ca cert at: [{}]", KUBERNETES_SERVICE_ACCOUNT_CA_CRT_PATH);
-                this.setCaCertData(new String(Files.readAllBytes(new File(KUBERNETES_SERVICE_ACCOUNT_CA_CRT_PATH).toPath())));
+                LOGGER.debug("Found service account ca cert at: [{}]", caFilePath);
+                this.setCaCertData(new String(Files.readAllBytes(new File(caFilePath).toPath())));
                 return true;
             } else {
-                LOGGER.error("Did not find service account ca cert at: [{}]", KUBERNETES_SERVICE_ACCOUNT_CA_CRT_PATH);
+                LOGGER.error("Did not find service account ca cert at: [{}]", caFilePath);
             }
         } catch (IOException e) {
             // No CA file available...
-            LOGGER.error("Error reading Kubernetes CA file from: [{}].", KUBERNETES_SERVICE_ACCOUNT_TOKEN_PATH, e);
+            LOGGER.error("Error reading Kubernetes CA file from: [{}].", caFilePath, e);
         }
 
         return false;
@@ -125,19 +131,41 @@ public class KubernetesConfig {
      * Load the Kubernetes Service account from within the pod
      */
     private boolean loadServiceAccountToken() {
+        String tokenFilePath = getSystemPropertyOrEnvVar(
+            KUBERNETES_SERVICE_ACCOUNT_TOKEN_PATH,
+            "/var/run/secrets/kubernetes.io/serviceaccount/token"
+        );
         try {
-            boolean serviceAccountAccessTokenExists = Files.isRegularFile(new File(KUBERNETES_SERVICE_ACCOUNT_TOKEN_PATH).toPath());
+            boolean serviceAccountAccessTokenExists = Files.isRegularFile(new File(tokenFilePath).toPath());
             if (serviceAccountAccessTokenExists) {
-                LOGGER.debug("Found service account token at: [" + KUBERNETES_SERVICE_ACCOUNT_TOKEN_PATH + "].");
-                this.setAccessToken(new String(Files.readAllBytes(new File(KUBERNETES_SERVICE_ACCOUNT_TOKEN_PATH).toPath())));
+                LOGGER.debug("Found service account token at: [{}].", tokenFilePath);
+                this.setAccessToken(new String(Files.readAllBytes(new File(tokenFilePath).toPath())));
                 return true;
             }
         } catch (IOException e) {
             // No service account token available...
-            LOGGER.error("Error reading service account token from: [{}].", KUBERNETES_SERVICE_ACCOUNT_TOKEN_PATH, e);
+            LOGGER.error("Error reading service account token from: [{}].", tokenFilePath, e);
         }
 
         return false;
+    }
+
+    private void loadCurrentNamespace() {
+        String namespaceFilePath = getSystemPropertyOrEnvVar(
+            KUBERNETES_CURRENT_NAMESPACE_PATH,
+            "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
+        );
+        try {
+            boolean namespaceExists = Files.isRegularFile(new File(namespaceFilePath).toPath());
+            if (namespaceExists) {
+                String namespace = new String(Files.readAllBytes(new File(namespaceFilePath).toPath()));
+                this.setCurrentNamespace(namespace);
+                LOGGER.debug("Found the current namespace [{}] at: [{}].", namespace, namespaceFilePath);
+            }
+        } catch (IOException e) {
+            // No service account token available...
+            LOGGER.error("Unable to read the current namespace from file: [{}].", namespaceFilePath, e);
+        }
     }
 
     public boolean tryKubeConfig() {
@@ -367,6 +395,17 @@ public class KubernetesConfig {
 
     public void setAccessToken(String accessToken) {
         this.accessToken = accessToken;
+    }
+
+    public String getCurrentNamespace() {
+        if (currentNamespace == null) {
+            loadCurrentNamespace();
+        }
+        return currentNamespace;
+    }
+
+    public void setCurrentNamespace(String currentNamespace) {
+        this.currentNamespace = currentNamespace;
     }
 
     public long getWebsocketTimeout() {
