@@ -41,7 +41,7 @@
         <!-- rxjava dependencies provided by VertX through gateway-standalone-container -->
         <dependency>
             <groupId>io.vertx</groupId>
-            <artifactId>vertx-rx-java2</artifactId>
+            <artifactId>vertx-rx-java3</artifactId>
             <scope>provided</scope>
         </dependency>
 

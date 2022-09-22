@@ -15,15 +15,19 @@
  */
 package io.gravitee.kubernetes.client;
 
-import io.fabric8.kubernetes.api.model.*;
+import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.fabric8.kubernetes.api.model.SecretListBuilder;
+import io.fabric8.kubernetes.api.model.WatchEvent;
 import io.gravitee.kubernetes.client.api.FieldSelector;
 import io.gravitee.kubernetes.client.api.LabelSelector;
 import io.gravitee.kubernetes.client.api.ResourceQuery;
 import io.gravitee.kubernetes.client.api.WatchQuery;
-import io.reactivex.Flowable;
-import io.reactivex.Single;
-import io.reactivex.observers.TestObserver;
-import io.reactivex.subscribers.TestSubscriber;
+import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.observers.TestObserver;
+import io.reactivex.rxjava3.subscribers.TestSubscriber;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import java.util.HashMap;
@@ -61,7 +65,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
     }
 
     @Test
-    public void shouldGetSecretList(TestContext tc) {
+    public void shouldGetSecretList(TestContext tc) throws InterruptedException {
         server
             .expect()
             .get()
@@ -73,7 +77,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .get(ResourceQuery.secrets("test").build())
             .test();
 
-        obs.awaitTerminalEvent();
+        obs.await();
         obs.assertValue(secretList -> {
             tc.assertEquals(2, secretList.getItems().size());
             return true;
@@ -81,7 +85,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
     }
 
     @Test
-    public void shouldGetSecret1(TestContext tc) {
+    public void shouldGetSecret1(TestContext tc) throws InterruptedException {
         server
             .expect()
             .get()
@@ -93,7 +97,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .get(ResourceQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build())
             .test();
 
-        obs.awaitTerminalEvent();
+        obs.await();
         obs.assertValue(secret -> {
             tc.assertNotNull(secret.getData());
             tc.assertEquals(2, secret.getData().size());
@@ -104,7 +108,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
     }
 
     @Test
-    public void shouldRetrieveSingleKeyInSecret(TestContext tc) {
+    public void shouldRetrieveSingleKeyInSecret(TestContext tc) throws InterruptedException {
         server
             .expect()
             .get()
@@ -116,7 +120,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .get(ResourceQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1/tls.key").build())
             .test();
 
-        obs.awaitTerminalEvent();
+        obs.await();
         obs.assertValue(secret -> {
             tc.assertNotNull(secret);
             tc.assertEquals("dHNsLmtleQ==", new String(secret.getData().get("tls.key")));
@@ -125,7 +129,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
     }
 
     @Test
-    public void shouldWatchAllSecrets() {
+    public void shouldWatchAllSecrets() throws InterruptedException {
         server
             .expect()
             .get()
@@ -147,13 +151,13 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets").build())
             .test();
 
-        obs.awaitTerminalEvent();
+        obs.await();
         obs.assertValueCount(4);
         obs.assertComplete();
     }
 
     @Test
-    public void shouldWatchSpecifiedSecret() {
+    public void shouldWatchSpecifiedSecret() throws InterruptedException {
         server
             .expect()
             .get()
@@ -171,14 +175,14 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build())
             .test();
 
-        obs.awaitTerminalEvent();
+        obs.await();
         obs.assertValueAt(0, secretEvent -> secretEvent.getType().equalsIgnoreCase("MODIFIED"));
         obs.assertValueAt(1, secretEvent -> secretEvent.getType().equalsIgnoreCase("DELETED"));
         obs.assertComplete();
     }
 
     @Test
-    public void shouldWatchSpecifiedSecret_usingDsl() {
+    public void shouldWatchSpecifiedSecret_usingDsl() throws InterruptedException {
         server
             .expect()
             .get()
@@ -196,7 +200,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .watch(WatchQuery.secret("test", "secret1").build())
             .test();
 
-        obs.awaitTerminalEvent();
+        obs.await();
         obs.assertValueAt(0, secretEvent -> secretEvent.getType().equalsIgnoreCase("MODIFIED"));
         obs.assertValueAt(1, secretEvent -> secretEvent.getType().equalsIgnoreCase("DELETED"));
         obs.assertComplete();
@@ -227,7 +231,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .mergeArray(watch1, watch2)
             .test();
 
-        obs.awaitTerminalEvent();
+        obs.await();
         obs.assertValueCount(4);
         obs.assertComplete();
     }
@@ -261,13 +265,13 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
 
         final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs = watch1.test();
 
-        obs.awaitTerminalEvent();
+        obs.await();
         obs.assertValueCount(2);
         obs.assertComplete();
     }
 
     @Test
-    public void shouldCancelWatchOnSameSecret() {
+    public void shouldCancelWatchOnSameSecret() throws InterruptedException {
         server
             .expect()
             .get()
@@ -306,13 +310,13 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
 
         obs1.assertEmpty();
 
-        obs2.awaitTerminalEvent();
+        obs2.await();
         obs2.assertValueCount(2);
         obs2.assertComplete();
     }
 
     @Test
-    public void shouldWatchOnDifferentSecrets() {
+    public void shouldWatchOnDifferentSecrets() throws InterruptedException {
         server
             .expect()
             .get()
@@ -347,13 +351,13 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .mergeArray(watch1, watch2)
             .test();
 
-        obs.awaitTerminalEvent();
+        obs.await();
         obs.assertValueCount(3);
         obs.assertComplete();
     }
 
     @Test
-    public void shouldCompleteWatchSecretsAfterError() {
+    public void shouldCompleteWatchSecretsAfterError() throws InterruptedException {
         server
             .expect()
             .get()
@@ -372,13 +376,13 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .flatMapSingle(e -> !e.getType().equalsIgnoreCase("ERROR") ? Single.just(e) : Single.error(new Exception("fake error")))
             .test();
 
-        obs.awaitTerminalEvent();
+        obs.await();
         obs.assertValueAt(0, secretEvent -> secretEvent.getType().equalsIgnoreCase("MODIFIED"));
         obs.assertError(Exception.class);
     }
 
     @Test
-    public void shouldRetryWatchOnEventError() {
+    public void shouldRetryWatchOnEventError() throws InterruptedException {
         // Mock first connection.
         server
             .expect()
@@ -411,14 +415,14 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .retry(2)
             .test();
 
-        obs.awaitTerminalEvent();
+        obs.await();
         obs.assertValueAt(0, secretEvent -> secretEvent.getType().equalsIgnoreCase("ADDED"));
         obs.assertValueAt(1, secretEvent -> secretEvent.getType().equalsIgnoreCase("MODIFIED"));
         obs.assertComplete();
     }
 
     @Test
-    public void shouldRetryWatchOnConnectionError() {
+    public void shouldRetryWatchOnConnectionError() throws InterruptedException {
         // Shutdown the server to force reconnection.
         server.shutdown();
 
@@ -440,7 +444,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             })
             .test();
 
-        obs.awaitTerminalEvent();
+        obs.await();
         obs.assertError(Exception.class);
     }
 

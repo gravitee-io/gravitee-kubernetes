@@ -15,12 +15,16 @@
  */
 package io.gravitee.kubernetes.client;
 
-import io.fabric8.kubernetes.api.model.*;
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.ConfigMapListBuilder;
+import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.api.model.WatchEvent;
 import io.gravitee.kubernetes.client.api.ResourceQuery;
 import io.gravitee.kubernetes.client.api.WatchQuery;
-import io.reactivex.Single;
-import io.reactivex.observers.TestObserver;
-import io.reactivex.subscribers.TestSubscriber;
+import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.observers.TestObserver;
+import io.reactivex.rxjava3.subscribers.TestSubscriber;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import java.util.Collections;
@@ -63,7 +67,7 @@ public class KubernetesConfigMapV1Test extends KubernetesUnitTest {
     }
 
     @Test
-    public void shouldGetConfigMapList(TestContext tc) {
+    public void shouldGetConfigMapList(TestContext tc) throws InterruptedException {
         server
             .expect()
             .get()
@@ -78,7 +82,7 @@ public class KubernetesConfigMapV1Test extends KubernetesUnitTest {
             .get(ResourceQuery.configMaps("test").build())
             .test();
 
-        obs.awaitTerminalEvent();
+        obs.await();
         obs.assertValue(configMapList -> {
             tc.assertEquals(2, configMapList.getItems().size());
             return true;
@@ -86,7 +90,7 @@ public class KubernetesConfigMapV1Test extends KubernetesUnitTest {
     }
 
     @Test
-    public void shouldGetConfigMap1(TestContext tc) {
+    public void shouldGetConfigMap1(TestContext tc) throws InterruptedException {
         server
             .expect()
             .get()
@@ -98,7 +102,7 @@ public class KubernetesConfigMapV1Test extends KubernetesUnitTest {
             .get(ResourceQuery.<io.gravitee.kubernetes.client.model.v1.ConfigMap>from("/test/configmaps/configmap1").build())
             .test();
 
-        obs.awaitTerminalEvent();
+        obs.await();
         obs.assertValue(configMap -> {
             tc.assertNotNull(configMap.getData());
             tc.assertEquals(2, configMap.getData().size());
@@ -109,7 +113,7 @@ public class KubernetesConfigMapV1Test extends KubernetesUnitTest {
     }
 
     @Test
-    public void shouldRetrieveSingleKeyInConfigMap(TestContext tc) {
+    public void shouldRetrieveSingleKeyInConfigMap(TestContext tc) throws InterruptedException {
         server
             .expect()
             .get()
@@ -121,7 +125,7 @@ public class KubernetesConfigMapV1Test extends KubernetesUnitTest {
             .get(ResourceQuery.<io.gravitee.kubernetes.client.model.v1.ConfigMap>from("/test/configmaps/configmap1/host").build())
             .test();
 
-        obs.awaitTerminalEvent();
+        obs.await();
         obs.assertValue(configMap -> {
             tc.assertNotNull(configMap);
             tc.assertEquals("localhost1", configMap.getData().get("host"));
@@ -130,7 +134,7 @@ public class KubernetesConfigMapV1Test extends KubernetesUnitTest {
     }
 
     @Test
-    public void shouldWatchAllConfigMaps() {
+    public void shouldWatchAllConfigMaps() throws InterruptedException {
         server
             .expect()
             .get()
@@ -152,13 +156,13 @@ public class KubernetesConfigMapV1Test extends KubernetesUnitTest {
             .watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.ConfigMap>from("/test/configmaps").build())
             .test();
 
-        obs.awaitTerminalEvent();
+        obs.await();
         obs.assertValueCount(4);
         obs.assertComplete();
     }
 
     @Test
-    public void shouldWatchSpecifiedConfigMap() {
+    public void shouldWatchSpecifiedConfigMap() throws InterruptedException {
         server
             .expect()
             .get()
@@ -176,14 +180,14 @@ public class KubernetesConfigMapV1Test extends KubernetesUnitTest {
             .watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.ConfigMap>from("/test/configmaps/configMap1").build())
             .test();
 
-        obs.awaitTerminalEvent();
+        obs.await();
         obs.assertValueAt(0, configMapEvent -> configMapEvent.getType().equalsIgnoreCase("MODIFIED"));
         obs.assertValueAt(1, configMapEvent -> configMapEvent.getType().equalsIgnoreCase("DELETED"));
         obs.assertComplete();
     }
 
     @Test
-    public void shouldWatchConfigMapsWithError() {
+    public void shouldWatchConfigMapsWithError() throws InterruptedException {
         server
             .expect()
             .get()
@@ -202,14 +206,14 @@ public class KubernetesConfigMapV1Test extends KubernetesUnitTest {
             .flatMapSingle(e -> !e.getType().equalsIgnoreCase("ERROR") ? Single.just(e) : Single.error(new Exception("fake error")))
             .test();
 
-        obs.awaitTerminalEvent();
+        obs.await();
         obs.assertValueAt(0, configMapEvent -> configMapEvent.getType().equalsIgnoreCase("MODIFIED"));
         obs.assertError(Exception.class);
     }
 
     @Test
     @Ignore
-    public void shouldRetryWatchOnEventError() {
+    public void shouldRetryWatchOnEventError() throws InterruptedException {
         // Mock first connection.
         server
             .expect()
@@ -242,14 +246,14 @@ public class KubernetesConfigMapV1Test extends KubernetesUnitTest {
             .retry(2)
             .test();
 
-        obs.awaitTerminalEvent();
+        obs.await();
         obs.assertValueAt(0, configMapEvent -> configMapEvent.getType().equalsIgnoreCase("ADDED"));
         obs.assertValueAt(1, configMapEvent -> configMapEvent.getType().equalsIgnoreCase("MODIFIED"));
         obs.assertComplete();
     }
 
     @Test
-    public void shouldRetryWatchOnConnectionError() {
+    public void shouldRetryWatchOnConnectionError() throws InterruptedException {
         // Shutdown the server to force reconnection.
         server.shutdown();
 
@@ -267,7 +271,7 @@ public class KubernetesConfigMapV1Test extends KubernetesUnitTest {
             })
             .test();
 
-        obs.awaitTerminalEvent();
+        obs.await();
         obs.assertError(Exception.class);
     }
 
