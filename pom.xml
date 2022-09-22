@@ -29,7 +29,7 @@
     <groupId>io.gravitee.kubernetes</groupId>
     <artifactId>gravitee-kubernetes</artifactId>
     <packaging>pom</packaging>
-    <version>0.5.0-SNAPSHOT</version>
+    <version>1.0.0-alpha.1</version>
     <name>Gravitee IO - Kubernetes</name>
 
     <scm>
@@ -50,13 +50,12 @@
     </modules>
 
     <properties>
-        <gravitee-bom.version>2.4</gravitee-bom.version>
+        <gravitee-bom.version>2.7</gravitee-bom.version>
         <gravitee-common.version>1.25.0</gravitee-common.version>
         <gravitee-node.version>1.11.0</gravitee-node.version>
         <gravitee-gateway.version>3.7.4</gravitee-gateway.version>
         <snakeyaml.version>1.26</snakeyaml.version>
         <fabric8.version>4.11.1</fabric8.version>
-        <rxjava.version>2.2.19</rxjava.version>
         <sonar.skip>true</sonar.skip>
         <junit-vintage-engine.version>5.8.2</junit-vintage-engine.version>
     </properties>
@@ -105,13 +104,6 @@
                 <artifactId>kubernetes-server-mock</artifactId>
                 <version>${fabric8.version}</version>
             </dependency>
-
-            <dependency>
-                <groupId>io.reactivex.rxjava2</groupId>
-                <artifactId>rxjava</artifactId>
-                <version>${rxjava.version}</version>
-            </dependency>
-
             <dependency>
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
