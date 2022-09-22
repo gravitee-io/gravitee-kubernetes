@@ -22,16 +22,20 @@ import io.gravitee.kubernetes.client.api.WatchQuery;
 import io.gravitee.kubernetes.client.config.KubernetesConfig;
 import io.gravitee.kubernetes.client.model.v1.Event;
 import io.gravitee.kubernetes.client.model.v1.Watchable;
-import io.reactivex.BackpressureStrategy;
-import io.reactivex.Flowable;
-import io.reactivex.Maybe;
+import io.reactivex.rxjava3.core.BackpressureStrategy;
+import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.core.Maybe;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.*;
+import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpHeaders;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.RequestOptions;
+import io.vertx.core.http.WebSocketConnectOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.PemTrustOptions;
-import io.vertx.reactivex.core.Vertx;
-import io.vertx.reactivex.core.http.HttpClient;
-import io.vertx.reactivex.core.http.HttpClientRequest;
+import io.vertx.rxjava3.core.Vertx;
+import io.vertx.rxjava3.core.http.HttpClient;
+import io.vertx.rxjava3.core.http.HttpClientRequest;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
@@ -134,7 +138,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                                             PING_HANDLER_DELAY,
                                             aLong ->
                                                 websocket
-                                                    .rxWritePing(io.vertx.reactivex.core.buffer.Buffer.buffer("ping"))
+                                                    .rxWritePing(io.vertx.rxjava3.core.buffer.Buffer.buffer("ping"))
                                                     .subscribe(
                                                         () -> LOGGER.debug("Ping sent to the Kubernetes websocket"),
                                                         t -> {

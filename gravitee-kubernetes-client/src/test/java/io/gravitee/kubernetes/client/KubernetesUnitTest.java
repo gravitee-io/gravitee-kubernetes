@@ -18,7 +18,7 @@ package io.gravitee.kubernetes.client;
 import io.fabric8.kubernetes.client.server.mock.KubernetesMockServer;
 import io.gravitee.kubernetes.client.config.KubernetesConfig;
 import io.gravitee.kubernetes.client.impl.KubernetesClientV1Impl;
-import io.vertx.reactivex.core.Vertx;
+import io.vertx.rxjava3.core.Vertx;
 import org.junit.After;
 import org.junit.Before;
 
