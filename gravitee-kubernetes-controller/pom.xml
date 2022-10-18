@@ -172,4 +172,10 @@
             </plugin>
         </plugins>
     </build>
+
+    <properties>
+        <!-- Property used by the publication job in CI-->
+        <publish-folder-path>graviteeio-apim/plugins/services</publish-folder-path>
+    </properties>
+
 </project>
