@@ -132,9 +132,9 @@
                     <excludes>
                         <exclude>LICENSE.txt</exclude>
                         <exclude>**/README</exclude>
-                        <exclude>**/*.adoc</exclude>
-                        <exclude>**/*.factories</exclude>
-                        <exclude>**/*.properties</exclude>
+                        <exclude>**/.*</exclude>
+                        <exclude>**/.*/**</exclude>
+                        <exclude>**/plugin.properties</exclude>
                         <exclude>.circleci/**/*</exclude>
                     </excludes>
                 </configuration>
