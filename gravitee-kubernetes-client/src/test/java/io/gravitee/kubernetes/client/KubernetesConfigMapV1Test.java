@@ -79,12 +79,10 @@ public class KubernetesConfigMapV1Test extends KubernetesUnitTest {
             .test();
 
         obs.awaitTerminalEvent();
-        obs.assertValue(
-            configMapList -> {
-                tc.assertEquals(2, configMapList.getItems().size());
-                return true;
-            }
-        );
+        obs.assertValue(configMapList -> {
+            tc.assertEquals(2, configMapList.getItems().size());
+            return true;
+        });
     }
 
     @Test
@@ -101,15 +99,13 @@ public class KubernetesConfigMapV1Test extends KubernetesUnitTest {
             .test();
 
         obs.awaitTerminalEvent();
-        obs.assertValue(
-            configMap -> {
-                tc.assertNotNull(configMap.getData());
-                tc.assertEquals(2, configMap.getData().size());
-                tc.assertNotNull(configMap.getData().get("host"));
-                tc.assertNotNull(configMap.getData().get("port"));
-                return true;
-            }
-        );
+        obs.assertValue(configMap -> {
+            tc.assertNotNull(configMap.getData());
+            tc.assertEquals(2, configMap.getData().size());
+            tc.assertNotNull(configMap.getData().get("host"));
+            tc.assertNotNull(configMap.getData().get("port"));
+            return true;
+        });
     }
 
     @Test
@@ -126,13 +122,11 @@ public class KubernetesConfigMapV1Test extends KubernetesUnitTest {
             .test();
 
         obs.awaitTerminalEvent();
-        obs.assertValue(
-            configMap -> {
-                tc.assertNotNull(configMap);
-                tc.assertEquals("localhost1", configMap.getData().get("host"));
-                return true;
-            }
-        );
+        obs.assertValue(configMap -> {
+            tc.assertNotNull(configMap);
+            tc.assertEquals("localhost1", configMap.getData().get("host"));
+            return true;
+        });
     }
 
     @Test
@@ -261,20 +255,16 @@ public class KubernetesConfigMapV1Test extends KubernetesUnitTest {
 
         final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.ConfigMap>> obs = kubernetesClient
             .watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.ConfigMap>from("/test/configmaps/configMap1").build())
-            .retryWhen(
-                errors -> {
-                    AtomicInteger counter = new AtomicInteger(0);
-                    return errors.flatMapSingle(
-                        e -> {
-                            if (counter.incrementAndGet() >= 5) {
-                                return Single.error(e);
-                            } else {
-                                return Single.timer(50, TimeUnit.MILLISECONDS);
-                            }
-                        }
-                    );
-                }
-            )
+            .retryWhen(errors -> {
+                AtomicInteger counter = new AtomicInteger(0);
+                return errors.flatMapSingle(e -> {
+                    if (counter.incrementAndGet() >= 5) {
+                        return Single.error(e);
+                    } else {
+                        return Single.timer(50, TimeUnit.MILLISECONDS);
+                    }
+                });
+            })
             .test();
 
         obs.awaitTerminalEvent();
