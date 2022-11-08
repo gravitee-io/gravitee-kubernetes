@@ -1,22 +1,16 @@
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/gravitee-io/graviteeio-kubernetes/blob/master/LICENSE.txt)
+[![Releases](https://img.shields.io/badge/semantic--release-conventional%20commits-e10079?logo=semantic-release)](https://github.com/gravitee-io/graviteeio-kubernetes/releases)
+[![CircleCI](https://circleci.com/gh/gravitee-io/gravitee-kubernetes.svg?style=svg)](https://circleci.com/gh/gravitee-io/gravitee-kubernetes)
+[![Join the community forum](https://f.hubspotusercontent40.net/hubfs/7600448/gravitee-github-button.jpg)](https://community.gravitee.io?utm_source=readme)
+
 # Gravitee.io Kubernetes
 
-This project provides a kubernetes controller for the APIM Gateway.
+This project provides a kubernetes libraries for Gravitee.io products.
 
-## Controller
+## Gravitee Kubernetes Client
 
-The Controller is provided as a [plugin](gravitee-gateway-services-kubernetes).
+A Java client for the kubernetes API
 
-This plugin isn't included into the Gateway bundle by default.
+### Gravitee Kubernetes Mapper
 
-### Custom Resource Definitions
-
-Kubernetes CRD used by the controller are available [here](crds/apim)
-
-### Admission webhook
-
-To enforce controls on custom resource, an admission webhook is provided by the controller plugin.
-
-The webhook endpoint will be registered on the `core\http` gateway service (by default localhost:18082).
-
-An example of `ValidatingWebhookConfiguration` definition is available [here](admission-webhook/apim)  
-
+Convert API definitions to kubernetes Custom Resource Definitions
