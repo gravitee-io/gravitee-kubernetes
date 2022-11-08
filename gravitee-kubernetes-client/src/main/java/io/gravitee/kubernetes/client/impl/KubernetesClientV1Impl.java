@@ -70,32 +70,28 @@ public class KubernetesClientV1Impl implements KubernetesClient {
             .rxRequest(requestOptions)
             .flatMap(HttpClientRequest::rxSend)
             .toMaybe()
-            .flatMap(
-                response -> {
-                    if (response.statusCode() != 200) {
-                        return Maybe.error(
-                            new RuntimeException(
-                                String.format("Unable to retrieve resource from [%s]. Error code [%d]", uri, response.statusCode())
-                            )
-                        );
-                    } else {
-                        return response
-                            .rxBody()
-                            .toMaybe()
-                            .flatMap(
-                                buffer -> {
-                                    JsonObject item = buffer.toJsonObject();
-                                    T resource = item.mapTo(query.getType());
-                                    if (resource != null) {
-                                        return Maybe.just(resource);
-                                    } else {
-                                        return Maybe.empty();
-                                    }
-                                }
-                            );
-                    }
+            .flatMap(response -> {
+                if (response.statusCode() != 200) {
+                    return Maybe.error(
+                        new RuntimeException(
+                            String.format("Unable to retrieve resource from [%s]. Error code [%d]", uri, response.statusCode())
+                        )
+                    );
+                } else {
+                    return response
+                        .rxBody()
+                        .toMaybe()
+                        .flatMap(buffer -> {
+                            JsonObject item = buffer.toJsonObject();
+                            T resource = item.mapTo(query.getType());
+                            if (resource != null) {
+                                return Maybe.just(resource);
+                            } else {
+                                return Maybe.empty();
+                            }
+                        });
                 }
-            );
+            });
     }
 
     /** @noinspection unchecked*/
@@ -127,37 +123,33 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                 emitter -> {
                     httpClient()
                         .rxWebSocket(webSocketConnectOptions)
-                        .flatMapPublisher(
-                            websocket ->
-                                websocket
-                                    .toFlowable()
-                                    .map(response -> response.toJsonObject().mapTo((Class<E>) query.getEventType()))
-                                    .doOnSubscribe(
-                                        disposable ->
-                                            // Periodically send a ping frame to maintain the connection up.
-                                            watch.timerId =
-                                                vertx.setPeriodic(
-                                                    PING_HANDLER_DELAY,
-                                                    aLong ->
-                                                        websocket
-                                                            .rxWritePing(io.vertx.reactivex.core.buffer.Buffer.buffer("ping"))
-                                                            .subscribe(
-                                                                () -> LOGGER.debug("Ping sent to the Kubernetes websocket"),
-                                                                t -> {
-                                                                    LOGGER.error("Unable to ping the Kubernetes websocket. Closing...");
-                                                                    websocket.close();
-                                                                    emitter.tryOnError(t);
-                                                                }
-                                                            )
-                                                )
-                                    )
-                                    .doOnComplete(emitter::onComplete)
-                                    .doFinally(
-                                        () -> {
-                                            vertx.cancelTimer(watch.timerId);
-                                            websocket.close();
-                                        }
-                                    )
+                        .flatMapPublisher(websocket ->
+                            websocket
+                                .toFlowable()
+                                .map(response -> response.toJsonObject().mapTo((Class<E>) query.getEventType()))
+                                .doOnSubscribe(disposable ->
+                                    // Periodically send a ping frame to maintain the connection up.
+                                    watch.timerId =
+                                        vertx.setPeriodic(
+                                            PING_HANDLER_DELAY,
+                                            aLong ->
+                                                websocket
+                                                    .rxWritePing(io.vertx.reactivex.core.buffer.Buffer.buffer("ping"))
+                                                    .subscribe(
+                                                        () -> LOGGER.debug("Ping sent to the Kubernetes websocket"),
+                                                        t -> {
+                                                            LOGGER.error("Unable to ping the Kubernetes websocket. Closing...");
+                                                            websocket.close();
+                                                            emitter.tryOnError(t);
+                                                        }
+                                                    )
+                                        )
+                                )
+                                .doOnComplete(emitter::onComplete)
+                                .doFinally(() -> {
+                                    vertx.cancelTimer(watch.timerId);
+                                    websocket.close();
+                                })
                         )
                         .subscribe(emitter::onNext, emitter::tryOnError);
                 },

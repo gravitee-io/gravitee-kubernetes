@@ -74,12 +74,10 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .test();
 
         obs.awaitTerminalEvent();
-        obs.assertValue(
-            secretList -> {
-                tc.assertEquals(2, secretList.getItems().size());
-                return true;
-            }
-        );
+        obs.assertValue(secretList -> {
+            tc.assertEquals(2, secretList.getItems().size());
+            return true;
+        });
     }
 
     @Test
@@ -96,15 +94,13 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .test();
 
         obs.awaitTerminalEvent();
-        obs.assertValue(
-            secret -> {
-                tc.assertNotNull(secret.getData());
-                tc.assertEquals(2, secret.getData().size());
-                tc.assertNotNull(secret.getData().get("tls.key"));
-                tc.assertNotNull(secret.getData().get("tls.pem"));
-                return true;
-            }
-        );
+        obs.assertValue(secret -> {
+            tc.assertNotNull(secret.getData());
+            tc.assertEquals(2, secret.getData().size());
+            tc.assertNotNull(secret.getData().get("tls.key"));
+            tc.assertNotNull(secret.getData().get("tls.pem"));
+            return true;
+        });
     }
 
     @Test
@@ -121,13 +117,11 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .test();
 
         obs.awaitTerminalEvent();
-        obs.assertValue(
-            secret -> {
-                tc.assertNotNull(secret);
-                tc.assertEquals("dHNsLmtleQ==", new String(secret.getData().get("tls.key")));
-                return true;
-            }
-        );
+        obs.assertValue(secret -> {
+            tc.assertNotNull(secret);
+            tc.assertEquals("dHNsLmtleQ==", new String(secret.getData().get("tls.key")));
+            return true;
+        });
     }
 
     @Test
@@ -434,20 +428,16 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
 
         final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs = kubernetesClient
             .watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build())
-            .retryWhen(
-                errors -> {
-                    AtomicInteger counter = new AtomicInteger(0);
-                    return errors.flatMapSingle(
-                        e -> {
-                            if (counter.incrementAndGet() >= 5) {
-                                return Single.error(e);
-                            } else {
-                                return Single.timer(50, TimeUnit.MILLISECONDS);
-                            }
-                        }
-                    );
-                }
-            )
+            .retryWhen(errors -> {
+                AtomicInteger counter = new AtomicInteger(0);
+                return errors.flatMapSingle(e -> {
+                    if (counter.incrementAndGet() >= 5) {
+                        return Single.error(e);
+                    } else {
+                        return Single.timer(50, TimeUnit.MILLISECONDS);
+                    }
+                });
+            })
             .test();
 
         obs.awaitTerminalEvent();
