@@ -44,7 +44,7 @@
         <gravitee-gateway.version>3.7.4</gravitee-gateway.version>
         <snakeyaml.version>1.26</snakeyaml.version>
         <fabric8.version>4.11.1</fabric8.version>
-        <rxjava.version>2.2.19</rxjava.version>
+        <rxjava.version>2.2.21</rxjava.version>
         <sonar.skip>true</sonar.skip>
         <junit-vintage-engine.version>5.8.2</junit-vintage-engine.version>
     </properties>
