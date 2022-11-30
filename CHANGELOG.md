@@ -1,3 +1,15 @@
+# [2.0.0](https://github.com/gravitee-io/gravitee-kubernetes/compare/1.0.0...2.0.0) (2022-11-30)
+
+
+### chore
+
+* **deps:** bump to rxJava3 ([4adad6e](https://github.com/gravitee-io/gravitee-kubernetes/commit/4adad6eccf6509188c608a0c55908af5491cf069))
+
+
+### BREAKING CHANGES
+
+* **deps:** rxJava3 required
+
 # [2.0.0-alpha.1](https://github.com/gravitee-io/gravitee-kubernetes/compare/1.0.0...2.0.0-alpha.1) (2022-11-08)
 
 
