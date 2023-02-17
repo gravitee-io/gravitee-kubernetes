@@ -168,7 +168,7 @@ public class KubernetesConfigMapV1Test extends KubernetesUnitTest {
         server
             .expect()
             .get()
-            .withPath("/api/v1/namespaces/test/configmaps/configMap1?watch=true")
+            .withPath("/api/v1/namespaces/test/configmaps?fieldSelector=metadata.name%3DconfigMap1&watch=true")
             .andUpgradeToWebSocket()
             .open()
             .waitFor(EVENT_WAIT_PERIOD_MS)
@@ -193,7 +193,7 @@ public class KubernetesConfigMapV1Test extends KubernetesUnitTest {
         server
             .expect()
             .get()
-            .withPath("/api/v1/namespaces/test/configmaps/configMap1?watch=true")
+            .withPath("/api/v1/namespaces/test/configmaps?fieldSelector=metadata.name%3DconfigMap1&watch=true")
             .andUpgradeToWebSocket()
             .open()
             .waitFor(EVENT_WAIT_PERIOD_MS)
@@ -220,7 +220,7 @@ public class KubernetesConfigMapV1Test extends KubernetesUnitTest {
         server
             .expect()
             .get()
-            .withPath("/api/v1/namespaces/test/configmaps/configMap1?watch=true")
+            .withPath("/api/v1/namespaces/test/configmaps?fieldSelector=metadata.name%3DconfigMap1&watch=true")
             .andUpgradeToWebSocket()
             .open()
             .waitFor(EVENT_WAIT_PERIOD_MS)
@@ -234,7 +234,7 @@ public class KubernetesConfigMapV1Test extends KubernetesUnitTest {
         server
             .expect()
             .get()
-            .withPath("/api/v1/namespaces/test/configmaps/configMap1?watch=true")
+            .withPath("/api/v1/namespaces/test/configmaps?fieldSelector=metadata.name%3DconfigMap1&watch=true")
             .andUpgradeToWebSocket()
             .open()
             .waitFor(EVENT_WAIT_PERIOD_MS)
