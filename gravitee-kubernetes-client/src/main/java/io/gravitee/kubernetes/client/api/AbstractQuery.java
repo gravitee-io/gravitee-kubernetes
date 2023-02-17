@@ -203,6 +203,7 @@ class AbstractQuery<T> {
         }
 
         public static Reference from(String location) {
+            Objects.requireNonNull(location, "Location can not be null");
             String[] properties = location.substring(1).split("/"); // Remove the initial /
 
             if (properties.length < 2 || hasEmptyValues(properties)) {

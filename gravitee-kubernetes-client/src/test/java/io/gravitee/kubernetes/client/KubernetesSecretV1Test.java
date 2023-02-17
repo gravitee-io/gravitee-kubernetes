@@ -161,7 +161,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
         server
             .expect()
             .get()
-            .withPath("/api/v1/namespaces/test/secrets/secret1?watch=true")
+            .withPath("/api/v1/namespaces/test/secrets?fieldSelector=metadata.name%3Dsecret1&watch=true")
             .andUpgradeToWebSocket()
             .open()
             .waitFor(EVENT_WAIT_PERIOD_MS)
@@ -186,7 +186,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
         server
             .expect()
             .get()
-            .withPath("/api/v1/namespaces/test/secrets/secret1?watch=true")
+            .withPath("/api/v1/namespaces/test/secrets?fieldSelector=metadata.name%3Dsecret1&watch=true")
             .andUpgradeToWebSocket()
             .open()
             .waitFor(EVENT_WAIT_PERIOD_MS)
@@ -211,7 +211,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
         server
             .expect()
             .get()
-            .withPath("/api/v1/namespaces/test/secrets/secret1?watch=true")
+            .withPath("/api/v1/namespaces/test/secrets?fieldSelector=metadata.name%3Dsecret1&watch=true")
             .andUpgradeToWebSocket()
             .open()
             .waitFor(EVENT_WAIT_PERIOD_MS)
@@ -242,7 +242,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .expect()
             .get()
             .withPath(
-                "/api/v1/namespaces/test/secrets/secret1?fieldSelector=field1%3DvalueField1,field2%3DvalueField2&labelSelector=label1%3DvalueLabel1,label2%3DvalueLabel2&watch=true"
+                "/api/v1/namespaces/test/secrets?fieldSelector=field1%3DvalueField1,field2%3DvalueField2&labelSelector=label1%3DvalueLabel1,label2%3DvalueLabel2&watch=true"
             )
             .andUpgradeToWebSocket()
             .open()
@@ -255,7 +255,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
 
         final Flowable<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> watch1 = kubernetesClient.watch(
             WatchQuery
-                .<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1")
+                .<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets")
                 .fieldSelector(FieldSelector.equals("field1", "valueField1"))
                 .fieldSelector(FieldSelector.equals("field2", "valueField2"))
                 .labelSelector(LabelSelector.equals("label1", "valueLabel1"))
@@ -275,7 +275,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
         server
             .expect()
             .get()
-            .withPath("/api/v1/namespaces/test/secrets/secret1?watch=true")
+            .withPath("/api/v1/namespaces/test/secrets?fieldSelector=metadata.name%3Dsecret1&watch=true")
             .andUpgradeToWebSocket()
             .open()
             .waitFor(EVENT_WAIT_PERIOD_MS)
@@ -288,7 +288,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
         server
             .expect()
             .get()
-            .withPath("/api/v1/namespaces/test/secrets/secret1?watch=true")
+            .withPath("/api/v1/namespaces/test/secrets?fieldSelector=metadata.name%3Dsecret1&watch=true")
             .andUpgradeToWebSocket()
             .open()
             .waitFor(EVENT_WAIT_PERIOD_MS)
@@ -320,7 +320,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
         server
             .expect()
             .get()
-            .withPath("/api/v1/namespaces/test/secrets/secret1?watch=true")
+            .withPath("/api/v1/namespaces/test/secrets?fieldSelector=metadata.name%3Dsecret1&watch=true")
             .andUpgradeToWebSocket()
             .open()
             .waitFor(EVENT_WAIT_PERIOD_MS)
@@ -333,7 +333,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
         server
             .expect()
             .get()
-            .withPath("/api/v1/namespaces/test/secrets/secret2?watch=true")
+            .withPath("/api/v1/namespaces/test/secrets?fieldSelector=metadata.name%3Dsecret2&watch=true")
             .andUpgradeToWebSocket()
             .open()
             .waitFor(EVENT_WAIT_PERIOD_MS)
@@ -361,7 +361,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
         server
             .expect()
             .get()
-            .withPath("/api/v1/namespaces/test/secrets/secret1?watch=true")
+            .withPath("/api/v1/namespaces/test/secrets?fieldSelector=metadata.name%3Dsecret1&watch=true")
             .andUpgradeToWebSocket()
             .open()
             .waitFor(EVENT_WAIT_PERIOD_MS)
@@ -387,7 +387,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
         server
             .expect()
             .get()
-            .withPath("/api/v1/namespaces/test/secrets/secret1?watch=true")
+            .withPath("/api/v1/namespaces/test/secrets?fieldSelector=metadata.name%3Dsecret1&watch=true")
             .andUpgradeToWebSocket()
             .open()
             .waitFor(EVENT_WAIT_PERIOD_MS)
@@ -401,7 +401,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
         server
             .expect()
             .get()
-            .withPath("/api/v1/namespaces/test/secrets/secret1?watch=true")
+            .withPath("/api/v1/namespaces/test/secrets?fieldSelector=metadata.name%3Dsecret1&watch=true")
             .andUpgradeToWebSocket()
             .open()
             .waitFor(EVENT_WAIT_PERIOD_MS)
