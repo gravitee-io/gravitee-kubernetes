@@ -159,7 +159,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                 },
                 BackpressureStrategy.LATEST
             )
-            .doOnError(throwable -> LOGGER.error("An error occurred watching from [{}]", uri, throwable))
+            .doOnError(throwable -> LOGGER.error("An error occurred watching from [{}], {}", uri, throwable.getMessage()))
             .publish()
             .refCount();
 

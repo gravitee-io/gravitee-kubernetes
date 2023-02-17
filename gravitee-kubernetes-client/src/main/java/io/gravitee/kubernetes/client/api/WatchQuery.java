@@ -67,16 +67,21 @@ public class WatchQuery<E extends Event<? extends Watchable>> extends AbstractQu
     public static WatchQueryBuilder<Secret, Event<Secret>> secret(String namespace, String secretName) {
         Objects.requireNonNull(namespace, "Namespace can not be null");
         Objects.requireNonNull(secretName, "Secret can not be null");
-        return new WatchQueryBuilder<Secret, Event<Secret>>(Type.SECRETS).namespace(namespace).resource(secretName);
+        return new WatchQueryBuilder<Secret, Event<Secret>>(Type.SECRETS)
+            .namespace(namespace)
+            .fieldSelector(FieldSelector.equals("metadata.name", secretName));
     }
 
     public static <T extends Watchable> WatchQueryBuilder<T, Event<T>> from(String location) {
         Reference reference = Reference.from(location);
 
-        return new WatchQueryBuilder<T, Event<T>>(reference.type)
-            .namespace(reference.namespace)
-            .resource(reference.resource)
-            .resourceKey(reference.resourceKey);
+        if (reference.resource == null) {
+            return new WatchQueryBuilder<T, Event<T>>(reference.type).namespace(reference.namespace);
+        } else {
+            return new WatchQueryBuilder<T, Event<T>>(reference.type)
+                .namespace(reference.namespace)
+                .fieldSelector(FieldSelector.equals("metadata.name", reference.resource));
+        }
     }
 
     @Override
