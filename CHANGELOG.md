@@ -1,3 +1,10 @@
+## [2.0.2](https://github.com/gravitee-io/gravitee-kubernetes/compare/2.0.1...2.0.2) (2023-05-03)
+
+
+### Bug Fixes
+
+* use dedicated vertx instance in kubernetes client ([0d1d9aa](https://github.com/gravitee-io/gravitee-kubernetes/commit/0d1d9aa1ea428bc7a6cdf0275ce471659074e7dc))
+
 ## [2.0.1](https://github.com/gravitee-io/gravitee-kubernetes/compare/2.0.0...2.0.1) (2023-02-17)
 
 
