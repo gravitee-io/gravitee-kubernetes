@@ -30,7 +30,7 @@ import org.springframework.context.annotation.Configuration;
 public class KubernetesClientConfiguration {
 
     @Bean
-    public KubernetesClient kubernetesClient(Vertx vertx) {
-        return new KubernetesClientV1Impl(vertx);
+    public KubernetesClient kubernetesClient() {
+        return new KubernetesClientV1Impl();
     }
 }

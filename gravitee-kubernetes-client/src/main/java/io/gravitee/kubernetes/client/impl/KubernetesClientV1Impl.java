@@ -25,6 +25,7 @@ import io.gravitee.kubernetes.client.model.v1.Watchable;
 import io.reactivex.rxjava3.core.BackpressureStrategy;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Maybe;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpHeaders;
@@ -56,8 +57,10 @@ public class KubernetesClientV1Impl implements KubernetesClient {
 
     private static final char WATCH_KEY_SEPARATOR = '#';
 
-    public KubernetesClientV1Impl(Vertx vertx) {
-        this.vertx = vertx;
+    public KubernetesClientV1Impl() {
+        VertxOptions options = new VertxOptions();
+        options.getMetricsOptions().setEnabled(false);
+        this.vertx = Vertx.vertx(options);
     }
 
     @Override

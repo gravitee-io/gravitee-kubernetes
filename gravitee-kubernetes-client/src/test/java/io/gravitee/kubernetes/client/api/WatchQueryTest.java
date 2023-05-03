@@ -24,24 +24,27 @@ import org.junit.jupiter.api.Test;
  * @author David BRASSELY (david.brassely at graviteesource.com)
  * @author GraviteeSource Team
  */
-public class WatchQueryTest {
+class WatchQueryTest {
 
     @Test
-    public void shouldWatchSingleSecret() {
+    void shouldWatchSingleSecret() {
         WatchQuery<Event<Secret>> query = WatchQuery.secret("my-namespace", "my-secret-name").build();
 
-        Assertions.assertEquals("/api/v1/namespaces/my-namespace/secrets/my-secret-name?watch=true", query.toUri());
+        Assertions.assertEquals(
+            "/api/v1/namespaces/my-namespace/secrets?fieldSelector=metadata.name%3Dmy-secret-name&watch=true",
+            query.toUri()
+        );
     }
 
     @Test
-    public void shouldWatchSecretsFromAllNamespaces() {
+    void shouldWatchSecretsFromAllNamespaces() {
         WatchQuery<Event<Secret>> query = WatchQuery.secrets().build();
 
         Assertions.assertEquals("/api/v1/secrets?watch=true", query.toUri());
     }
 
     @Test
-    public void shouldWatchSecretsFromNamespace() {
+    void shouldWatchSecretsFromNamespace() {
         WatchQuery<Event<Secret>> query = WatchQuery.secrets("my-namespace").build();
 
         Assertions.assertEquals("/api/v1/namespaces/my-namespace/secrets?watch=true", query.toUri());
@@ -55,14 +58,14 @@ public class WatchQueryTest {
     }
 
     @Test
-    public void shouldGetSecretsFromNamespace_fieldSelector_usingFrom() {
+    void shouldGetSecretsFromNamespace_fieldSelector_usingFrom() {
         WatchQuery<Event<Secret>> query = WatchQuery
             .<Secret>from("/my-namespace/secrets")
             .fieldSelector(FieldSelector.equals("status.hostIP", "172.17.8.101"))
             .build();
 
         Assertions.assertEquals(
-            "/api/v1/namespaces/my-namespace/secrets?fieldSelector=status.hostIP=172.17.8.101&watch=true",
+            "/api/v1/namespaces/my-namespace/secrets?fieldSelector=status.hostIP%3D172.17.8.101&watch=true",
             query.toUri()
         );
     }
