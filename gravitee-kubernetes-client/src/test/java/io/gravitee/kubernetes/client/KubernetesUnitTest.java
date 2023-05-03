@@ -18,7 +18,6 @@ package io.gravitee.kubernetes.client;
 import io.fabric8.kubernetes.client.server.mock.KubernetesMockServer;
 import io.gravitee.kubernetes.client.config.KubernetesConfig;
 import io.gravitee.kubernetes.client.impl.KubernetesClientV1Impl;
-import io.vertx.rxjava3.core.Vertx;
 import org.junit.After;
 import org.junit.Before;
 
@@ -29,7 +28,6 @@ import org.junit.Before;
 public abstract class KubernetesUnitTest {
 
     protected static final Long EVENT_WAIT_PERIOD_MS = 10L;
-    protected Vertx vertx = Vertx.vertx();
     protected KubernetesMockServer server;
     protected KubernetesClient kubernetesClient;
 
@@ -40,15 +38,12 @@ public abstract class KubernetesUnitTest {
 
         // Set kubeconfig system property to use for creating a
         buildKubernetesConfig();
-        kubernetesClient = new KubernetesClientV1Impl(vertx);
+        kubernetesClient = new KubernetesClientV1Impl();
     }
 
     @After
     public void after() {
-        vertx.exceptionHandler(null);
-        //    kubernetesClient.stop();
         server.destroy();
-        vertx.close();
     }
 
     // Helper methods
