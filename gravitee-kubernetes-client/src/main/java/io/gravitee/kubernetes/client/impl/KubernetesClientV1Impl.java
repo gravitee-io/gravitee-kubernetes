@@ -51,17 +51,19 @@ public class KubernetesClientV1Impl implements KubernetesClient {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KubernetesClientV1Impl.class);
     private static final long PING_HANDLER_DELAY = 5000L;
-    private final Vertx vertx;
+    private static final Vertx VERTX;
+
+    static {
+        // Maintain only one dedicated instance of vertx.
+        VertxOptions options = new VertxOptions();
+        options.getMetricsOptions().setEnabled(false);
+        VERTX = Vertx.vertx(options);
+    }
+
     private HttpClient httpClient;
     private final Map<String, Watch> watchMap = new ConcurrentHashMap<>();
 
     private static final char WATCH_KEY_SEPARATOR = '#';
-
-    public KubernetesClientV1Impl() {
-        VertxOptions options = new VertxOptions();
-        options.getMetricsOptions().setEnabled(false);
-        this.vertx = Vertx.vertx(options);
-    }
 
     @Override
     public <T> Maybe<T> get(ResourceQuery<T> query) {
@@ -137,7 +139,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                                 .doOnSubscribe(disposable ->
                                     // Periodically send a ping frame to maintain the connection up.
                                     watch.timerId =
-                                        vertx.setPeriodic(
+                                        VERTX.setPeriodic(
                                             PING_HANDLER_DELAY,
                                             aLong ->
                                                 websocket
@@ -154,7 +156,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                                 )
                                 .doOnComplete(emitter::onComplete)
                                 .doFinally(() -> {
-                                    vertx.cancelTimer(watch.timerId);
+                                    VERTX.cancelTimer(watch.timerId);
                                     websocket.close();
                                 })
                         )
@@ -208,7 +210,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
 
     private synchronized HttpClient httpClient() {
         if (this.httpClient == null) {
-            this.httpClient = vertx.createHttpClient(httpClientOptions());
+            this.httpClient = VERTX.createHttpClient(httpClientOptions());
         }
 
         return httpClient;
