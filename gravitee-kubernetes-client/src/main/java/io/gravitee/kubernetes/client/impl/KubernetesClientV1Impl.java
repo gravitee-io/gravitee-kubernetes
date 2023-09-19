@@ -38,6 +38,7 @@ import io.vertx.rxjava3.core.Vertx;
 import io.vertx.rxjava3.core.http.HttpClient;
 import io.vertx.rxjava3.core.http.HttpClientRequest;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,10 +61,28 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         VERTX = Vertx.vertx(options);
     }
 
+    private final KubernetesConfig config;
     private HttpClient httpClient;
-    private final Map<String, Watch> watchMap = new ConcurrentHashMap<>();
+    private final Map<String, Watch> watchMap;
 
     private static final char WATCH_KEY_SEPARATOR = '#';
+
+    public KubernetesClientV1Impl() {
+        watchMap = new ConcurrentHashMap<>();
+        config = KubernetesConfig.getInstance();
+    }
+
+    public KubernetesClientV1Impl(String configFile, int timeout, String namespace) {
+        watchMap = new ConcurrentHashMap<>();
+        config = KubernetesConfig.newInstance(configFile);
+        if (timeout > 0) {
+            config.setApiTimeout(timeout);
+        }
+        if (namespace != null && namespace.trim().length() > 0) {
+            // TODO change behavior in secret manager plugin
+            config.setCurrentNamespace(namespace);
+        }
+    }
 
     @Override
     public <T> Maybe<T> get(ResourceQuery<T> query) {
@@ -129,7 +148,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
 
         final Flowable<E> events = Flowable
             .<E>create(
-                emitter -> {
+                emitter ->
                     httpClient()
                         .rxWebSocket(webSocketConnectOptions)
                         .flatMapPublisher(websocket ->
@@ -160,8 +179,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                                     websocket.close();
                                 })
                         )
-                        .subscribe(emitter::onNext, emitter::tryOnError);
-                },
+                        .subscribe(emitter::onNext, emitter::tryOnError),
                 BackpressureStrategy.LATEST
             )
             .doOnError(throwable -> LOGGER.error("An error occurred watching from [{}], {}", uri, throwable.getMessage()))
@@ -184,7 +202,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
     }
 
     private KubernetesConfig kubeConfig() {
-        return KubernetesConfig.getInstance();
+        return this.config;
     }
 
     private HttpClientOptions httpClientOptions() {
@@ -205,6 +223,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
             .setTrustAll(!kubeConfig().verifyHost())
             .setDefaultHost(kubeConfig().getApiServerHost())
             .setDefaultPort(kubeConfig().getApiServerPort())
+            .setConnectTimeout(kubeConfig().getApiTimeout())
             .setSsl(kubeConfig().useSSL());
     }
 
