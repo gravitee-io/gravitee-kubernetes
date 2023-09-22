@@ -67,12 +67,14 @@ public class KubernetesConfig {
     private static KubernetesConfig instance;
 
     private KubernetesConfig() {
-        this(null);
+        if (!tryKubeConfig(null) && !tryServiceAccount()) {
+            LOGGER.error("Unable to configure Kubernetes Config. No KubeConfig or Service account is found");
+        }
     }
 
-    public KubernetesConfig(String kubeConfigLocation) {
+    private KubernetesConfig(String kubeConfigLocation) {
         if (!tryKubeConfig(kubeConfigLocation) && !tryServiceAccount()) {
-            LOGGER.error("Unable to configure Kubernetes Config. No KubeConfig or Service account is found");
+            throw new IllegalArgumentException("Unable to configure Kubernetes Config. No KubeConfig or Service account is found");
         }
     }
 

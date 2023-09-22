@@ -63,23 +63,20 @@ public class KubernetesClientV1Impl implements KubernetesClient {
 
     private final KubernetesConfig config;
     private HttpClient httpClient;
-    private final Map<String, Watch> watchMap;
+    private final Map<String, Watch> watchMap = new ConcurrentHashMap<>();
 
     private static final char WATCH_KEY_SEPARATOR = '#';
 
     public KubernetesClientV1Impl() {
-        watchMap = new ConcurrentHashMap<>();
         config = KubernetesConfig.getInstance();
     }
 
     public KubernetesClientV1Impl(String configFile, int timeout, String namespace) {
-        watchMap = new ConcurrentHashMap<>();
         config = KubernetesConfig.newInstance(configFile);
         if (timeout > 0) {
             config.setApiTimeout(timeout);
         }
         if (namespace != null && namespace.trim().length() > 0) {
-            // TODO change behavior in secret manager plugin
             config.setCurrentNamespace(namespace);
         }
     }
