@@ -26,6 +26,7 @@ import java.nio.file.Files;
 import java.util.Base64;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -347,7 +348,7 @@ public class KubernetesConfig {
 
     private String getKubeConfigFilename(String overrideFile) {
         // if an override file is given then, it becomes mandatory
-        if (overrideFile != null) {
+        if (Objects.nonNull(overrideFile) && !overrideFile.isBlank()) {
             if (new File(overrideFile).isFile()) {
                 return overrideFile;
             }
