@@ -349,7 +349,7 @@ public class KubernetesConfig {
             if (new File(overrideFile).isFile()) {
                 return overrideFile;
             }
-            throw new IllegalArgumentException(String.format("Override Kubernetes config file '%s' does not exists", overrideFile));
+            throw new IllegalArgumentException(String.format("Override Kubernetes config file '%s' does not exist", overrideFile));
         }
 
         String fileName = System
