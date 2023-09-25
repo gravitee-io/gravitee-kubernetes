@@ -26,6 +26,7 @@ import java.nio.file.Files;
 import java.util.Base64;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,8 +45,8 @@ public class KubernetesConfig {
     public static final String KUBERNETES_SERVICE_ACCOUNT_CA_CRT_PATH = "KUBERNETES_SERVICE_ACCOUNT_CA_CRT_PATH";
     public static final String KUBERNETES_CURRENT_NAMESPACE_PATH = "KUBERNETES_CURRENT_NAMESPACE";
     public static final String KUBERNETES_KUBECONFIG_FILE = "kubeconfig";
-    public static final Long DEFAULT_WEBSOCKET_TIMEOUT = 5 * 60 * 1000L;
-
+    static final Long DEFAULT_WEBSOCKET_TIMEOUT = 5 * 60 * 1000L;
+    static final Integer DEFAULT_API_TIMEOUT = 5 * 60 * 1000;
     private String apiServerHost;
     private int apiServerPort;
     private String caCertData;
@@ -54,6 +55,7 @@ public class KubernetesConfig {
     private String accessToken;
     private String currentNamespace;
     private long websocketTimeout = DEFAULT_WEBSOCKET_TIMEOUT;
+    private int apiTimeout = DEFAULT_API_TIMEOUT;
 
     private String masterUrl;
     private String apiVersion = "v1";
@@ -66,8 +68,14 @@ public class KubernetesConfig {
     private static KubernetesConfig instance;
 
     private KubernetesConfig() {
-        if (!tryKubeConfig() && !tryServiceAccount()) {
+        if (!tryKubeConfig(null) && !tryServiceAccount()) {
             LOGGER.error("Unable to configure Kubernetes Config. No KubeConfig or Service account is found");
+        }
+    }
+
+    private KubernetesConfig(String kubeConfigLocation) {
+        if (!tryKubeConfig(kubeConfigLocation) && !tryServiceAccount()) {
+            throw new IllegalArgumentException("Unable to configure Kubernetes Config. No KubeConfig or Service account is found");
         }
     }
 
@@ -76,6 +84,10 @@ public class KubernetesConfig {
             instance = new KubernetesConfig();
         }
         return instance;
+    }
+
+    public static KubernetesConfig newInstance(String kubeConfigLocation) {
+        return new KubernetesConfig(kubeConfigLocation);
     }
 
     boolean tryServiceAccount() {
@@ -168,9 +180,9 @@ public class KubernetesConfig {
         }
     }
 
-    public boolean tryKubeConfig() {
+    public boolean tryKubeConfig(String kubeConfigLocation) {
         LOGGER.debug("Trying to configure client from Kubernetes config...");
-        File kubeConfigFile = new File(getKubeConfigFilename());
+        File kubeConfigFile = new File(getKubeConfigFilename(kubeConfigLocation));
         if (!kubeConfigFile.isFile()) {
             LOGGER.debug("Did not find Kubernetes config at: [{}]. Ignoring.", kubeConfigFile.getPath());
             return false;
@@ -299,22 +311,8 @@ public class KubernetesConfig {
     private String getHomeDir() {
         String osName = System.getProperty("os.name").toLowerCase(Locale.ROOT);
         if (osName.startsWith("win")) {
-            String homeDrive = System.getenv("HOMEDRIVE");
-            String homePath = System.getenv("HOMEPATH");
-            if (homeDrive != null && !homeDrive.isEmpty() && homePath != null && !homePath.isEmpty()) {
-                String homeDir = homeDrive + homePath;
-                File f = new File(homeDir);
-                if (f.exists() && f.isDirectory()) {
-                    return homeDir;
-                }
-            }
-            String userProfile = System.getenv("USERPROFILE");
-            if (userProfile != null && !userProfile.isEmpty()) {
-                File f = new File(userProfile);
-                if (f.exists() && f.isDirectory()) {
-                    return userProfile;
-                }
-            }
+            String homeDir = getWinHomeDir();
+            if (homeDir != null) return homeDir;
         }
         String home = System.getenv("HOME");
         if (home != null && !home.isEmpty()) {
@@ -328,7 +326,35 @@ public class KubernetesConfig {
         return System.getProperty("user.home", ".");
     }
 
-    private String getKubeConfigFilename() {
+    private static String getWinHomeDir() {
+        String homeDrive = System.getenv("HOMEDRIVE");
+        String homePath = System.getenv("HOMEPATH");
+        if (homeDrive != null && !homeDrive.isEmpty() && homePath != null && !homePath.isEmpty()) {
+            String homeDir = homeDrive + homePath;
+            File f = new File(homeDir);
+            if (f.exists() && f.isDirectory()) {
+                return homeDir;
+            }
+        }
+        String userProfile = System.getenv("USERPROFILE");
+        if (userProfile != null && !userProfile.isEmpty()) {
+            File f = new File(userProfile);
+            if (f.exists() && f.isDirectory()) {
+                return userProfile;
+            }
+        }
+        return null;
+    }
+
+    private String getKubeConfigFilename(String overrideFile) {
+        // if an override file is given then, it becomes mandatory
+        if (Objects.nonNull(overrideFile) && !overrideFile.isBlank()) {
+            if (new File(overrideFile).isFile()) {
+                return overrideFile;
+            }
+            throw new IllegalArgumentException(String.format("Override Kubernetes config file '%s' does not exist", overrideFile));
+        }
+
         String fileName = System
             .getenv()
             .getOrDefault(KUBERNETES_KUBECONFIG_FILE, new File(getHomeDir(), ".kube" + File.separator + "config").toString());
@@ -414,6 +440,14 @@ public class KubernetesConfig {
 
     public void setWebsocketTimeout(long websocketTimeout) {
         this.websocketTimeout = websocketTimeout;
+    }
+
+    public int getApiTimeout() {
+        return apiTimeout;
+    }
+
+    public void setApiTimeout(int apiTimeout) {
+        this.apiTimeout = apiTimeout;
     }
 
     public String getMasterUrl() {

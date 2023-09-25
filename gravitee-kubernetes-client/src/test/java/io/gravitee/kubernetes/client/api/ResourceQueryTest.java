@@ -18,52 +18,56 @@ package io.gravitee.kubernetes.client.api;
 import io.gravitee.kubernetes.client.model.v1.Secret;
 import io.gravitee.kubernetes.client.model.v1.SecretList;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayNameGeneration;
+import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.jupiter.api.Test;
 
 /**
  * @author David BRASSELY (david.brassely at graviteesource.com)
  * @author GraviteeSource Team
  */
+
+@DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
 public class ResourceQueryTest {
 
     @Test
-    public void shouldGetSingleSecret() {
+    void should_get_single_secret() {
         ResourceQuery<Secret> query = ResourceQuery.secret("my-namespace", "my-secret-name").build();
 
         Assertions.assertEquals("/api/v1/namespaces/my-namespace/secrets/my-secret-name", query.toUri());
     }
 
     @Test
-    public void shouldGetSingleSecret_usingFrom() {
+    void should_get_single_secret_using_from() {
         ResourceQuery<Secret> query = ResourceQuery.<Secret>from("/my-namespace/secrets/my-secret-name").build();
 
         Assertions.assertEquals("/api/v1/namespaces/my-namespace/secrets/my-secret-name", query.toUri());
     }
 
     @Test
-    public void shouldGetSecretsFromNamespace() {
+    void should_get_secrets_from_namespace() {
         ResourceQuery<SecretList> query = ResourceQuery.secrets("my-namespace").build();
 
         Assertions.assertEquals("/api/v1/namespaces/my-namespace/secrets", query.toUri());
     }
 
     @Test
-    public void shouldGetSecretsFromNamespace_fieldSelector() {
+    void should_get_secrets_from_namespace_field_selector() {
         ResourceQuery<SecretList> query = ResourceQuery
             .secrets("my-namespace")
             .fieldSelector(FieldSelector.equals("status.hostIP", "172.17.8.101"))
             .build();
 
-        Assertions.assertEquals("/api/v1/namespaces/my-namespace/secrets?fieldSelector=status.hostIP=172.17.8.101", query.toUri());
+        Assertions.assertEquals("/api/v1/namespaces/my-namespace/secrets?fieldSelector=status.hostIP%3D172.17.8.101", query.toUri());
     }
 
     @Test
-    public void shouldGetSecretsFromNamespace_fieldSelector_usingFrom() {
+    void should_get_secrets_from_namespace_field_selector_using_from() {
         ResourceQuery<SecretList> query = ResourceQuery
             .<SecretList>from("/my-namespace/secrets")
             .fieldSelector(FieldSelector.equals("status.hostIP", "172.17.8.101"))
             .build();
 
-        Assertions.assertEquals("/api/v1/namespaces/my-namespace/secrets?fieldSelector=status.hostIP=172.17.8.101", query.toUri());
+        Assertions.assertEquals("/api/v1/namespaces/my-namespace/secrets?fieldSelector=status.hostIP%3D172.17.8.101", query.toUri());
     }
 }
