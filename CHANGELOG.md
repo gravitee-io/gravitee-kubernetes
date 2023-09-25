@@ -1,3 +1,18 @@
+# [2.1.0](https://github.com/gravitee-io/gravitee-kubernetes/compare/2.0.3...2.1.0) (2023-09-25)
+
+
+### Bug Fixes
+
+* check override file only is not null or blank ([d7c35b9](https://github.com/gravitee-io/gravitee-kubernetes/commit/d7c35b919760784fcd699cae947040731ee766c7))
+* fixes floowing review ([79da848](https://github.com/gravitee-io/gravitee-kubernetes/commit/79da8485311f3264c9d3586d5b48261b604088f3))
+* KubernetesConfig.java text typo ([91f88d2](https://github.com/gravitee-io/gravitee-kubernetes/commit/91f88d26caa01a73c88be66b20c225ca38d0b898))
+
+
+### Features
+
+* allow kube client to use alternate kube config and defaults at creation time. ([#56](https://github.com/gravitee-io/gravitee-kubernetes/issues/56)) ([13957fd](https://github.com/gravitee-io/gravitee-kubernetes/commit/13957fda0d0233f653c657791b48569c1f78c7a5))
+* allow kube client to use alternate kube config file and defaults at creation time ([ebc2aba](https://github.com/gravitee-io/gravitee-kubernetes/commit/ebc2aba641b4cf94571afa7f2153559199bed5ff))
+
 ## [2.0.3](https://github.com/gravitee-io/gravitee-kubernetes/compare/2.0.2...2.0.3) (2023-05-16)
 
 
