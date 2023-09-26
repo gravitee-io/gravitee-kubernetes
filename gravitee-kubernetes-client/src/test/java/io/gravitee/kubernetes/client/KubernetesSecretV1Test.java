@@ -138,9 +138,9 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .open()
             .waitFor(EVENT_WAIT_PERIOD_MS)
             .andEmit(new WatchEvent(secret1, "ADDED"))
-            .immediately()
+            .waitFor(EVENT_WAIT_PERIOD_MS)
             .andEmit(new WatchEvent(secret2, "DELETED"))
-            .immediately()
+            .waitFor(EVENT_WAIT_PERIOD_MS)
             .andEmit(new WatchEvent(secret3, "ADDED"))
             .waitFor(EVENT_WAIT_PERIOD_MS)
             .andEmit(new WatchEvent(secret1, "MODIFIED"))
@@ -153,6 +153,10 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
 
         obs.await();
         obs.assertValueCount(4);
+        obs.assertValueAt(0, secretEvent -> secretEvent.getType().equalsIgnoreCase("ADDED"));
+        obs.assertValueAt(1, secretEvent -> secretEvent.getType().equalsIgnoreCase("DELETED"));
+        obs.assertValueAt(2, secretEvent -> secretEvent.getType().equalsIgnoreCase("ADDED"));
+        obs.assertValueAt(3, secretEvent -> secretEvent.getType().equalsIgnoreCase("MODIFIED"));
         obs.assertComplete();
     }
 

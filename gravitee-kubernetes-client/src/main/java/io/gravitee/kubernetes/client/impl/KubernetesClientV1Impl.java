@@ -22,12 +22,16 @@ import io.gravitee.kubernetes.client.api.WatchQuery;
 import io.gravitee.kubernetes.client.config.KubernetesConfig;
 import io.gravitee.kubernetes.client.model.v1.Event;
 import io.gravitee.kubernetes.client.model.v1.Watchable;
-import io.reactivex.rxjava3.core.BackpressureStrategy;
 import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.core.FlowableTransformer;
 import io.reactivex.rxjava3.core.Maybe;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.*;
+import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpHeaders;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.RequestOptions;
+import io.vertx.core.http.WebSocketConnectOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.PemTrustOptions;
 import io.vertx.rxjava3.core.Vertx;
@@ -35,6 +39,7 @@ import io.vertx.rxjava3.core.http.HttpClient;
 import io.vertx.rxjava3.core.http.HttpClientRequest;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -132,49 +137,33 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         final Watch<E> watch = new Watch<>(watchKey);
         final WebSocketConnectOptions webSocketConnectOptions = buildWebSocketConnectOptions(uri);
 
-        final Flowable<E> events = Flowable
-            .<E>create(
-                emitter ->
-                    httpClient()
-                        .rxWebSocket(webSocketConnectOptions)
-                        .flatMapPublisher(websocket ->
-                            websocket
-                                .toFlowable()
-                                .map(response -> response.toJsonObject().mapTo((Class<E>) query.getEventType()))
-                                .doOnSubscribe(disposable ->
-                                    // Periodically send a ping frame to maintain the connection up.
-                                    watch.timerId =
-                                        VERTX.setPeriodic(
-                                            PING_HANDLER_DELAY,
-                                            aLong ->
-                                                websocket
-                                                    .rxWritePing(io.vertx.rxjava3.core.buffer.Buffer.buffer("ping"))
-                                                    .subscribe(
-                                                        () -> LOGGER.debug("Ping sent to the Kubernetes websocket"),
-                                                        t -> {
-                                                            LOGGER.error("Unable to ping the Kubernetes websocket. Closing...");
-                                                            websocket.close();
-                                                            emitter.tryOnError(t);
-                                                        }
-                                                    )
-                                        )
-                                )
-                                .doOnComplete(emitter::onComplete)
-                                .doFinally(() -> {
-                                    VERTX.cancelTimer(watch.timerId);
-                                    websocket.close();
-                                })
-                        )
-                        .subscribe(emitter::onNext, emitter::tryOnError),
-                BackpressureStrategy.LATEST
-            )
-            .doOnError(throwable -> LOGGER.error("An error occurred watching from [{}], {}", uri, throwable.getMessage()))
+        final Flowable<E> events = httpClient()
+            .rxWebSocket(webSocketConnectOptions)
+            .flatMapPublisher(websocket -> {
+                Flowable<E> pingFlowable = websocketPing(websocket);
+                return pingFlowable.compose(
+                    mergeWithFirst(websocket.toFlowable().map(response -> response.toJsonObject().mapTo((Class<E>) query.getEventType())))
+                );
+            })
+            .doOnError(throwable -> LOGGER.error("An error occurred watching from [{}]", uri, throwable))
             .publish()
             .refCount();
 
         watch.setEvents(events);
 
         return watch;
+    }
+
+    private <E> Flowable<E> websocketPing(io.vertx.rxjava3.core.http.WebSocket webSocket) {
+        return Flowable
+            .interval(PING_HANDLER_DELAY, TimeUnit.MILLISECONDS)
+            .timestamp()
+            .flatMapCompletable(timed -> webSocket.rxWritePing(io.vertx.rxjava3.core.buffer.Buffer.buffer("ping")))
+            .toFlowable();
+    }
+
+    private <E> FlowableTransformer<E, E> mergeWithFirst(Flowable<E> other) {
+        return upstream -> other.materialize().mergeWith(upstream.materialize()).dematerialize(n -> n);
     }
 
     private WebSocketConnectOptions buildWebSocketConnectOptions(String uri) {
