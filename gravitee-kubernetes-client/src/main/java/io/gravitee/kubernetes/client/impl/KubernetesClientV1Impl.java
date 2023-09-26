@@ -27,18 +27,13 @@ import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Maybe;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpHeaders;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.RequestOptions;
-import io.vertx.core.http.WebSocketConnectOptions;
+import io.vertx.core.http.*;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.PemTrustOptions;
 import io.vertx.rxjava3.core.Vertx;
 import io.vertx.rxjava3.core.http.HttpClient;
 import io.vertx.rxjava3.core.http.HttpClientRequest;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,14 +66,8 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         config = KubernetesConfig.getInstance();
     }
 
-    public KubernetesClientV1Impl(String configFile, int timeout, String namespace) {
-        config = KubernetesConfig.newInstance(configFile);
-        if (timeout > 0) {
-            config.setApiTimeout(timeout);
-        }
-        if (namespace != null && namespace.trim().length() > 0) {
-            config.setCurrentNamespace(namespace);
-        }
+    public KubernetesClientV1Impl(KubernetesConfig kubeConfig) {
+        this.config = kubeConfig;
     }
 
     @Override
