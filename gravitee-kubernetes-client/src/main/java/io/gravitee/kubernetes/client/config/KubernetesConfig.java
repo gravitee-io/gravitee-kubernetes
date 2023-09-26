@@ -435,7 +435,7 @@ public class KubernetesConfig {
      *         <li>When configured using using a config file, it will be the value of the namespace set for the current context or will be <code>"default"</code></li>
      *         <li>Externally set</li>
      *     </ul>
-     *     <li>Loaded from the cluster information, which is in can</li>
+     *     <li>Loaded from the cluster information in which Gravitee is deployed</li>
      *     <li><code>null</code> if no context can be loaded from config file, or an error occurs reading cluster information</li>
      * </ol>
      *
