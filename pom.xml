@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.gravitee</groupId>
         <artifactId>gravitee-parent</artifactId>
-        <version>20.2</version>
+        <version>22.0.2</version>
     </parent>
 
     <groupId>io.gravitee.kubernetes</groupId>
@@ -38,11 +38,9 @@
     </modules>
 
     <properties>
-        <gravitee-bom.version>2.7</gravitee-bom.version>
-        <gravitee-common.version>1.28.0</gravitee-common.version>
-        <gravitee-node.version>1.11.0</gravitee-node.version>
-        <gravitee-gateway.version>3.7.4</gravitee-gateway.version>
-        <snakeyaml.version>1.26</snakeyaml.version>
+        <gravitee-bom.version>6.0.6</gravitee-bom.version>
+        <gravitee-common.version>3.3.3</gravitee-common.version>
+        <gravitee-node.version>4.3.1</gravitee-node.version>
         <fabric8.version>4.11.1</fabric8.version>
         <sonar.skip>true</sonar.skip>
         <junit-vintage-engine.version>5.8.2</junit-vintage-engine.version>
@@ -71,16 +69,16 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            <dependency>
-                <groupId>io.gravitee.gateway.handlers</groupId>
-                <artifactId>gravitee-gateway-handlers-api</artifactId>
-                <version>${gravitee-gateway.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.gravitee.gateway</groupId>
-                <artifactId>gravitee-gateway-reactor</artifactId>
-                <version>${gravitee-gateway.version}</version>
-            </dependency>
+<!--            <dependency>-->
+<!--                <groupId>io.gravitee.gateway.handlers</groupId>-->
+<!--                <artifactId>gravitee-gateway-handlers-api</artifactId>-->
+<!--                <version>${gravitee-gateway.version}</version>-->
+<!--            </dependency>-->
+<!--            <dependency>-->
+<!--                <groupId>io.gravitee.gateway</groupId>-->
+<!--                <artifactId>gravitee-gateway-reactor</artifactId>-->
+<!--                <version>${gravitee-gateway.version}</version>-->
+<!--            </dependency>-->
 
             <dependency>
                 <groupId>io.fabric8</groupId>
@@ -92,43 +90,7 @@
                 <artifactId>kubernetes-server-mock</artifactId>
                 <version>${fabric8.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.yaml</groupId>
-                <artifactId>snakeyaml</artifactId>
-                <version>${snakeyaml.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.junit.vintage</groupId>
-                <artifactId>junit-vintage-engine</artifactId>
-                <version>${junit-vintage-engine.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bcpkix-jdk15on</artifactId>
-                <version>1.68</version>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>com.hubspot.maven.plugins</groupId>
-                <artifactId>prettier-maven-plugin</artifactId>
-                <version>0.18</version>
-                <configuration>
-                    <nodeVersion>16.16.0</nodeVersion>
-                    <prettierJavaVersion>1.6.1</prettierJavaVersion>
-                </configuration>
-                <executions>
-                    <execution>
-                        <phase>validate</phase>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
 </project>
