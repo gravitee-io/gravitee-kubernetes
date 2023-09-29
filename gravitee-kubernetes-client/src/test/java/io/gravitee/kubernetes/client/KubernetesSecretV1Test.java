@@ -1,11 +1,11 @@
-/**
- * Copyright (C) 2015 The Gravitee team (http://gravitee.io)
+/*
+ * Copyright © 2015 The Gravitee team (http://gravitee.io)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -159,9 +159,8 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .done()
             .once();
 
-        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs = kubernetesClient
-            .watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets").build())
-            .test();
+        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs =
+            kubernetesClient.watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets").build()).test();
 
         obs.await();
         obs.assertValueCount(4);
@@ -187,9 +186,8 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .done()
             .once();
 
-        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs = kubernetesClient
-            .watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build())
-            .test();
+        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs =
+            kubernetesClient.watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build()).test();
 
         obs.await();
         obs.assertValueAt(0, secretEvent -> secretEvent.getType().equalsIgnoreCase("MODIFIED"));
@@ -212,9 +210,8 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .done()
             .once();
 
-        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs = kubernetesClient
-            .watch(WatchQuery.secret("test", "secret1").build())
-            .test();
+        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs =
+            kubernetesClient.watch(WatchQuery.secret("test", "secret1").build()).test();
 
         obs.await();
         obs.assertValueAt(0, secretEvent -> secretEvent.getType().equalsIgnoreCase("MODIFIED"));
@@ -237,12 +234,10 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .done()
             .once();
 
-        final Flowable<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> watch1 = kubernetesClient.watch(
-            WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build()
-        );
-        final Flowable<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> watch2 = kubernetesClient.watch(
-            WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build()
-        );
+        final Flowable<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> watch1 =
+            kubernetesClient.watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build());
+        final Flowable<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> watch2 =
+            kubernetesClient.watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build());
         final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs = Flowable
             .mergeArray(watch1, watch2)
             .test();
@@ -269,17 +264,19 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .done()
             .once();
 
-        final Flowable<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> watch1 = kubernetesClient.watch(
-            WatchQuery
-                .<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets")
-                .fieldSelector(FieldSelector.equals("field1", "valueField1"))
-                .fieldSelector(FieldSelector.equals("field2", "valueField2"))
-                .labelSelector(LabelSelector.equals("label1", "valueLabel1"))
-                .labelSelector(LabelSelector.equals("label2", "valueLabel2"))
-                .build()
-        );
+        final Flowable<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> watch1 =
+            kubernetesClient.watch(
+                WatchQuery
+                    .<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets")
+                    .fieldSelector(FieldSelector.equals("field1", "valueField1"))
+                    .fieldSelector(FieldSelector.equals("field2", "valueField2"))
+                    .labelSelector(LabelSelector.equals("label1", "valueLabel1"))
+                    .labelSelector(LabelSelector.equals("label2", "valueLabel2"))
+                    .build()
+            );
 
-        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs = watch1.test();
+        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs =
+            watch1.test();
 
         obs.await();
         obs.assertValueCount(2);
@@ -314,15 +311,17 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .done()
             .once();
 
-        final Flowable<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> watch1 = kubernetesClient
-            .watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build())
-            .doOnSubscribe(Subscription::cancel);
-        final Flowable<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> watch2 = kubernetesClient.watch(
-            WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build()
-        );
+        final Flowable<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> watch1 =
+            kubernetesClient
+                .watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build())
+                .doOnSubscribe(Subscription::cancel);
+        final Flowable<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> watch2 =
+            kubernetesClient.watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build());
 
-        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs1 = watch1.test();
-        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs2 = watch2.test();
+        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs1 =
+            watch1.test();
+        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs2 =
+            watch2.test();
 
         obs1.assertEmpty();
 
@@ -357,12 +356,10 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .done()
             .once();
 
-        final Flowable<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> watch1 = kubernetesClient.watch(
-            WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build()
-        );
-        final Flowable<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> watch2 = kubernetesClient.watch(
-            WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret2").build()
-        );
+        final Flowable<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> watch1 =
+            kubernetesClient.watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build());
+        final Flowable<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> watch2 =
+            kubernetesClient.watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret2").build());
         final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs = Flowable
             .mergeArray(watch1, watch2)
             .test();
@@ -387,10 +384,11 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .done()
             .once();
 
-        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs = kubernetesClient
-            .watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build())
-            .flatMapSingle(e -> !e.getType().equalsIgnoreCase("ERROR") ? Single.just(e) : Single.error(new Exception("fake error")))
-            .test();
+        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs =
+            kubernetesClient
+                .watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build())
+                .flatMapSingle(e -> !e.getType().equalsIgnoreCase("ERROR") ? Single.just(e) : Single.error(new Exception("fake error")))
+                .test();
 
         obs.await();
         obs.assertValueAt(0, secretEvent -> secretEvent.getType().equalsIgnoreCase("MODIFIED"));
@@ -425,11 +423,12 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .done()
             .once();
 
-        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs = kubernetesClient
-            .watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build())
-            .flatMapSingle(e -> !e.getType().equalsIgnoreCase("ERROR") ? Single.just(e) : Single.error(new Exception("fake error")))
-            .retry(2)
-            .test();
+        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs =
+            kubernetesClient
+                .watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build())
+                .flatMapSingle(e -> !e.getType().equalsIgnoreCase("ERROR") ? Single.just(e) : Single.error(new Exception("fake error")))
+                .retry(2)
+                .test();
 
         obs.await();
         obs.assertValueAt(0, secretEvent -> secretEvent.getType().equalsIgnoreCase("ADDED"));
@@ -442,23 +441,23 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
         // Shutdown the server to force reconnection.
         server.shutdown();
 
-        Flowable<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> watch = kubernetesClient.watch(
-            WatchQuery.secret("test", "secret1").build()
-        );
+        Flowable<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> watch =
+            kubernetesClient.watch(WatchQuery.secret("test", "secret1").build());
 
-        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs = kubernetesClient
-            .watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build())
-            .retryWhen(errors -> {
-                AtomicInteger counter = new AtomicInteger(0);
-                return errors.flatMapSingle(e -> {
-                    if (counter.incrementAndGet() >= 5) {
-                        return Single.error(e);
-                    } else {
-                        return Single.timer(50, TimeUnit.MILLISECONDS);
-                    }
-                });
-            })
-            .test();
+        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs =
+            kubernetesClient
+                .watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build())
+                .retryWhen(errors -> {
+                    AtomicInteger counter = new AtomicInteger(0);
+                    return errors.flatMapSingle(e -> {
+                        if (counter.incrementAndGet() >= 5) {
+                            return Single.error(e);
+                        } else {
+                            return Single.timer(50, TimeUnit.MILLISECONDS);
+                        }
+                    });
+                })
+                .test();
 
         obs.await();
         obs.assertError(Exception.class);
