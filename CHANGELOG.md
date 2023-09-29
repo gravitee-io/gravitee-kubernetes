@@ -1,3 +1,12 @@
+## [2.1.1](https://github.com/gravitee-io/gravitee-kubernetes/compare/2.1.0...2.1.1) (2023-09-29)
+
+
+### Bug Fixes
+
+* always connect with mTLS + tests ([48cf7dd](https://github.com/gravitee-io/gravitee-kubernetes/commit/48cf7dd3df69577a342c99aeb91fc8a0eda9aae9))
+* get namespace from context file, connect via mTLS ([0d8954e](https://github.com/gravitee-io/gravitee-kubernetes/commit/0d8954eb71737df20238f354484763f5690829bb))
+* infer namespace from context file ([425774e](https://github.com/gravitee-io/gravitee-kubernetes/commit/425774ed095fdf1b2bfd3a2787c90ccfb71c2c61))
+
 # [2.1.0](https://github.com/gravitee-io/gravitee-kubernetes/compare/2.0.3...2.1.0) (2023-09-25)
 
 
