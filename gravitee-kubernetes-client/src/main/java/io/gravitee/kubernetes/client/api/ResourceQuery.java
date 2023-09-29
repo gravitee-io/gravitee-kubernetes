@@ -25,6 +25,8 @@ import java.util.Objects;
  */
 public class ResourceQuery<T> extends AbstractQuery<T> {
 
+    public static final String NAMESPACE_CAN_NOT_BE_NULL = "Namespace can not be null";
+
     protected ResourceQuery(
         String namespace,
         Type type,
@@ -41,12 +43,12 @@ public class ResourceQuery<T> extends AbstractQuery<T> {
     }
 
     public static QueryBuilder<ConfigMapList> configMaps(String namespace) {
-        Objects.requireNonNull(namespace, "Namespace can not be null");
+        Objects.requireNonNull(namespace, NAMESPACE_CAN_NOT_BE_NULL);
         return new QueryBuilder<ConfigMapList>(Type.CONFIGMAPS).namespace(namespace);
     }
 
     public static QueryBuilder<ConfigMap> configMap(String namespace, String configMapName) {
-        Objects.requireNonNull(namespace, "Namespace can not be null");
+        Objects.requireNonNull(namespace, NAMESPACE_CAN_NOT_BE_NULL);
         Objects.requireNonNull(configMapName, "ConfigMap can not be null");
         return new QueryBuilder<ConfigMap>(Type.CONFIGMAPS).namespace(namespace).resource(configMapName);
     }
@@ -56,12 +58,12 @@ public class ResourceQuery<T> extends AbstractQuery<T> {
     }
 
     public static QueryBuilder<SecretList> secrets(String namespace) {
-        Objects.requireNonNull(namespace, "Namespace can not be null");
+        Objects.requireNonNull(namespace, NAMESPACE_CAN_NOT_BE_NULL);
         return new QueryBuilder<SecretList>(Type.SECRETS).namespace(namespace);
     }
 
     public static QueryBuilder<Secret> secret(String namespace, String secretName) {
-        Objects.requireNonNull(namespace, "Namespace can not be null");
+        Objects.requireNonNull(namespace, NAMESPACE_CAN_NOT_BE_NULL);
         Objects.requireNonNull(secretName, "Secret can not be null");
         return new QueryBuilder<Secret>(Type.SECRETS).namespace(namespace).resource(secretName);
     }

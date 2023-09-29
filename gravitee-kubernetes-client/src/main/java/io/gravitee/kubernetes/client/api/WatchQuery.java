@@ -18,13 +18,16 @@ package io.gravitee.kubernetes.client.api;
 import io.gravitee.kubernetes.client.model.v1.*;
 import java.util.List;
 import java.util.Objects;
+import lombok.EqualsAndHashCode;
 
 /**
  * @author David BRASSELY (david.brassely at graviteesource.com)
  * @author GraviteeSource Team
  */
+@EqualsAndHashCode(callSuper = true)
 public class WatchQuery<E extends Event<? extends Watchable>> extends AbstractQuery<E> {
 
+    public static final String NAMESPACE_CAN_NOT_BE_NULL = "Namespace can not be null";
     private final boolean allowWatchBookmarks;
 
     protected WatchQuery(
@@ -45,12 +48,12 @@ public class WatchQuery<E extends Event<? extends Watchable>> extends AbstractQu
     }
 
     public static WatchQueryBuilder<ConfigMap, Event<ConfigMap>> configMaps(String namespace) {
-        Objects.requireNonNull(namespace, "Namespace can not be null");
+        Objects.requireNonNull(namespace, NAMESPACE_CAN_NOT_BE_NULL);
         return new WatchQueryBuilder<ConfigMap, Event<ConfigMap>>(Type.CONFIGMAPS).namespace(namespace);
     }
 
     public static WatchQueryBuilder<ConfigMap, Event<ConfigMap>> configMap(String namespace, String configMapName) {
-        Objects.requireNonNull(namespace, "Namespace can not be null");
+        Objects.requireNonNull(namespace, NAMESPACE_CAN_NOT_BE_NULL);
         Objects.requireNonNull(configMapName, "ConfigMap can not be null");
         return new WatchQueryBuilder<ConfigMap, Event<ConfigMap>>(Type.CONFIGMAPS).namespace(namespace).resource(configMapName);
     }
@@ -60,12 +63,12 @@ public class WatchQuery<E extends Event<? extends Watchable>> extends AbstractQu
     }
 
     public static WatchQueryBuilder<Secret, Event<Secret>> secrets(String namespace) {
-        Objects.requireNonNull(namespace, "Namespace can not be null");
+        Objects.requireNonNull(namespace, NAMESPACE_CAN_NOT_BE_NULL);
         return new WatchQueryBuilder<Secret, Event<Secret>>(Type.SECRETS).namespace(namespace);
     }
 
     public static WatchQueryBuilder<Secret, Event<Secret>> secret(String namespace, String secretName) {
-        Objects.requireNonNull(namespace, "Namespace can not be null");
+        Objects.requireNonNull(namespace, NAMESPACE_CAN_NOT_BE_NULL);
         Objects.requireNonNull(secretName, "Secret can not be null");
         return new WatchQueryBuilder<Secret, Event<Secret>>(Type.SECRETS)
             .namespace(namespace)
@@ -96,7 +99,7 @@ public class WatchQuery<E extends Event<? extends Watchable>> extends AbstractQu
         return parameters;
     }
 
-    public Class<?> getEventType() {
+    public Class<? extends Event<Watchable>> getEventType() {
         return type.eventType();
     }
 

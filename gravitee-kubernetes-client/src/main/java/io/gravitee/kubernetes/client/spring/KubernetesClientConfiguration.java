@@ -17,7 +17,6 @@ package io.gravitee.kubernetes.client.spring;
 
 import io.gravitee.kubernetes.client.KubernetesClient;
 import io.gravitee.kubernetes.client.impl.KubernetesClientV1Impl;
-import io.vertx.rxjava3.core.Vertx;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 

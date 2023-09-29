@@ -29,7 +29,9 @@ class AbstractQuery<T> {
     private static final String API_VERSION = "/api/v1";
 
     protected final Type type;
-    protected final String namespace, resource, resourceKey;
+    protected final String namespace;
+    protected final String resource;
+    protected final String resourceKey;
     protected final List<FieldSelector> fieldSelectors;
     protected final List<LabelSelector> labelSelectors;
 
@@ -146,7 +148,9 @@ class AbstractQuery<T> {
     public static class AbstractQueryBuilder<T> {
 
         protected final Type type;
-        protected String namespace, resource, resourceKey;
+        protected String namespace;
+        protected String resource;
+        protected String resourceKey;
         protected final List<FieldSelector> fieldSelectors = new ArrayList<>();
         protected final List<LabelSelector> labelSelectors = new ArrayList<>();
 
@@ -193,7 +197,9 @@ class AbstractQuery<T> {
     static class Reference {
 
         final Type type;
-        final String namespace, resource, resourceKey;
+        final String namespace;
+        final String resource;
+        final String resourceKey;
 
         public Reference(Type type, String namespace, String resource, String resourceKey) {
             this.type = type;
@@ -207,7 +213,9 @@ class AbstractQuery<T> {
             String[] properties = location.substring(1).split("/"); // Remove the initial /
 
             if (properties.length < 2 || hasEmptyValues(properties)) {
-                throw new RuntimeException("Wrong location. A correct format looks like this \"/{namespace}/configmaps/{configmap-name}\"");
+                throw new IllegalArgumentException(
+                    "Wrong location. A correct format looks like this \"/{namespace}/configmaps/{configmap-name}\""
+                );
             }
 
             String resourceKey = properties.length == 4 ? properties[3] : null;

@@ -26,14 +26,15 @@ public enum Type {
     CONFIGMAPS("configmaps", ConfigMap.class, ConfigMapList.class, ConfigMapEvent.class);
 
     private final String value;
-    private final Class<?> type, listType;
-    private final Class<? extends Event<?>> eventType;
+    private final Class<?> clazz;
+    private final Class<?> listType;
+    private final Class<? extends Event<Watchable>> eventType;
 
-    Type(String value, Class<?> type, Class<?> listType, Class<? extends Event<?>> eventType) {
+    Type(String value, Class<?> clazz, Class<?> listType, Class<? extends Event<?>> eventType) {
         this.value = value;
-        this.type = type;
+        this.clazz = clazz;
         this.listType = listType;
-        this.eventType = eventType;
+        this.eventType = (Class<? extends Event<Watchable>>) eventType;
     }
 
     public String value() {
@@ -41,14 +42,14 @@ public enum Type {
     }
 
     public Class<?> type() {
-        return type;
+        return clazz;
     }
 
     public Class<?> listType() {
         return listType;
     }
 
-    public Class<? extends Event<?>> eventType() {
+    public Class<? extends Event<Watchable>> eventType() {
         return eventType;
     }
 }
