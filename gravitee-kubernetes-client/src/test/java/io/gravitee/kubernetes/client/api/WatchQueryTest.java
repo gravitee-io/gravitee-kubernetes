@@ -51,7 +51,7 @@ class WatchQueryTest {
     }
 
     @Test
-    public void shouldGetSecretListFromNamespaceWithBookmarks() {
+    void shouldGetSecretListFromNamespaceWithBookmarks() {
         WatchQuery<Event<Secret>> query = WatchQuery.secrets("my-namespace").allowWatchBookmarks(true).build();
 
         Assertions.assertEquals("/api/v1/namespaces/my-namespace/secrets?watch=true&allowWatchBookmarks=true", query.toUri());

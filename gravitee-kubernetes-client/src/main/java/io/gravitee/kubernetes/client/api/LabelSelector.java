@@ -28,10 +28,6 @@ public class LabelSelector {
     private final String value;
     private final LabelSelector.Operator operator;
 
-    private LabelSelector(String name, String value) {
-        this(name, LabelSelector.Operator.EQUALS, value);
-    }
-
     private LabelSelector(String name, LabelSelector.Operator operator, String value) {
         this.name = name;
         this.value = value;
@@ -48,7 +44,7 @@ public class LabelSelector {
 
     @Override
     public String toString() {
-        return URLEncoder.encode(String.format("%s%s%s", name, operator.getOperator(), value), StandardCharsets.UTF_8);
+        return URLEncoder.encode(String.format("%s%s%s", name, operator.getValue(), value), StandardCharsets.UTF_8);
     }
 
     public String toQueryParam() {
@@ -59,14 +55,14 @@ public class LabelSelector {
         EQUALS("="),
         NOT_EQUALS("!=");
 
-        private final String operator;
+        private final String value;
 
-        Operator(String operator) {
-            this.operator = operator;
+        Operator(String value) {
+            this.value = value;
         }
 
-        public String getOperator() {
-            return operator;
+        public String getValue() {
+            return value;
         }
     }
 }

@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
  */
 
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
-public class ResourceQueryTest {
+class ResourceQueryTest {
 
     @Test
     void should_get_single_secret() {

@@ -16,6 +16,7 @@
 package io.gravitee.kubernetes.client.model.v1;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -26,14 +27,14 @@ import java.util.Map;
  * @since 3.9.11
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class ObjectMeta {
+public class ObjectMeta implements Serializable {
 
     private Map<String, String> annotations;
     private String clusterName;
     private String creationTimestamp;
     private Long deletionGracePeriodSeconds;
     private String deletionTimestamp;
-    private List<String> finalizers = new ArrayList<String>();
+    private List<String> finalizers = new ArrayList<>();
     private String generateName;
     private Long generation;
     private Map<String, String> labels;

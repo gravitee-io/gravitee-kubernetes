@@ -27,7 +27,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class ListMeta {
 
     @JsonProperty("continue")
-    private String _continue;
+    private String continueValue;
 
     private Long remainingItemCount;
     private String resourceVersion;
@@ -41,14 +41,14 @@ public class ListMeta {
 
     /**
      *
-     * @param _continue
+     * @param continueValue
      * @param remainingItemCount
      * @param resourceVersion
      * @param selfLink
      */
-    public ListMeta(String _continue, Long remainingItemCount, String resourceVersion, String selfLink) {
+    public ListMeta(String continueValue, Long remainingItemCount, String resourceVersion, String selfLink) {
         super();
-        this._continue = _continue;
+        this.continueValue = continueValue;
         this.remainingItemCount = remainingItemCount;
         this.resourceVersion = resourceVersion;
         this.selfLink = selfLink;
@@ -56,12 +56,12 @@ public class ListMeta {
 
     @JsonProperty("continue")
     public String getContinue() {
-        return _continue;
+        return continueValue;
     }
 
     @JsonProperty("continue")
-    public void setContinue(String _continue) {
-        this._continue = _continue;
+    public void setContinue(String continueValue) {
+        this.continueValue = continueValue;
     }
 
     @JsonProperty("remainingItemCount")
@@ -99,7 +99,7 @@ public class ListMeta {
         return (
             "ListMeta{" +
             "_continue='" +
-            _continue +
+            continueValue +
             '\'' +
             ", remainingItemCount=" +
             remainingItemCount +
