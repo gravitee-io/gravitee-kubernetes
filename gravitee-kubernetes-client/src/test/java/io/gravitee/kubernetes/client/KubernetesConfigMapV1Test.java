@@ -1,11 +1,11 @@
-/**
- * Copyright (C) 2015 The Gravitee team (http://gravitee.io)
+/*
+ * Copyright © 2015 The Gravitee team (http://gravitee.io)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -152,9 +152,8 @@ public class KubernetesConfigMapV1Test extends KubernetesUnitTest {
             .done()
             .once();
 
-        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.ConfigMap>> obs = kubernetesClient
-            .watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.ConfigMap>from("/test/configmaps").build())
-            .test();
+        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.ConfigMap>> obs =
+            kubernetesClient.watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.ConfigMap>from("/test/configmaps").build()).test();
 
         obs.await();
         obs.assertValueCount(4);
@@ -176,9 +175,10 @@ public class KubernetesConfigMapV1Test extends KubernetesUnitTest {
             .done()
             .once();
 
-        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.ConfigMap>> obs = kubernetesClient
-            .watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.ConfigMap>from("/test/configmaps/configMap1").build())
-            .test();
+        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.ConfigMap>> obs =
+            kubernetesClient
+                .watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.ConfigMap>from("/test/configmaps/configMap1").build())
+                .test();
 
         obs.await();
         obs.assertValueAt(0, configMapEvent -> configMapEvent.getType().equalsIgnoreCase("MODIFIED"));
@@ -201,10 +201,11 @@ public class KubernetesConfigMapV1Test extends KubernetesUnitTest {
             .done()
             .once();
 
-        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.ConfigMap>> obs = kubernetesClient
-            .watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.ConfigMap>from("/test/configmaps/configMap1").build())
-            .flatMapSingle(e -> !e.getType().equalsIgnoreCase("ERROR") ? Single.just(e) : Single.error(new Exception("fake error")))
-            .test();
+        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.ConfigMap>> obs =
+            kubernetesClient
+                .watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.ConfigMap>from("/test/configmaps/configMap1").build())
+                .flatMapSingle(e -> !e.getType().equalsIgnoreCase("ERROR") ? Single.just(e) : Single.error(new Exception("fake error")))
+                .test();
 
         obs.await();
         obs.assertValueAt(0, configMapEvent -> configMapEvent.getType().equalsIgnoreCase("MODIFIED"));
@@ -240,11 +241,12 @@ public class KubernetesConfigMapV1Test extends KubernetesUnitTest {
             .done()
             .once();
 
-        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.ConfigMap>> obs = kubernetesClient
-            .watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.ConfigMap>from("/test/configmaps/configMap1").build())
-            .flatMapSingle(e -> !e.getType().equalsIgnoreCase("ERROR") ? Single.just(e) : Single.error(new Exception("fake error")))
-            .retry(2)
-            .test();
+        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.ConfigMap>> obs =
+            kubernetesClient
+                .watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.ConfigMap>from("/test/configmaps/configMap1").build())
+                .flatMapSingle(e -> !e.getType().equalsIgnoreCase("ERROR") ? Single.just(e) : Single.error(new Exception("fake error")))
+                .retry(2)
+                .test();
 
         obs.await();
         obs.assertValueAt(0, configMapEvent -> configMapEvent.getType().equalsIgnoreCase("ADDED"));
@@ -257,19 +259,20 @@ public class KubernetesConfigMapV1Test extends KubernetesUnitTest {
         // Shutdown the server to force reconnection.
         server.shutdown();
 
-        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.ConfigMap>> obs = kubernetesClient
-            .watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.ConfigMap>from("/test/configmaps/configMap1").build())
-            .retryWhen(errors -> {
-                AtomicInteger counter = new AtomicInteger(0);
-                return errors.flatMapSingle(e -> {
-                    if (counter.incrementAndGet() >= 5) {
-                        return Single.error(e);
-                    } else {
-                        return Single.timer(50, TimeUnit.MILLISECONDS);
-                    }
-                });
-            })
-            .test();
+        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.ConfigMap>> obs =
+            kubernetesClient
+                .watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.ConfigMap>from("/test/configmaps/configMap1").build())
+                .retryWhen(errors -> {
+                    AtomicInteger counter = new AtomicInteger(0);
+                    return errors.flatMapSingle(e -> {
+                        if (counter.incrementAndGet() >= 5) {
+                            return Single.error(e);
+                        } else {
+                            return Single.timer(50, TimeUnit.MILLISECONDS);
+                        }
+                    });
+                })
+                .test();
 
         obs.await();
         obs.assertError(Exception.class);
