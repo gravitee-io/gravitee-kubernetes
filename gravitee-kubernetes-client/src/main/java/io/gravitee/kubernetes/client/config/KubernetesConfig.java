@@ -200,6 +200,10 @@ public class KubernetesConfig {
         try {
             Config config = parseConfigFromString(kubeConfigContents);
             Context currentContext = getContext(config);
+            if (currentContext != null) {
+                String namespace = currentContext.getNamespace();
+                this.setCurrentNamespace(namespace != null && !namespace.isBlank() ? namespace : "default");
+            }
             Cluster currentCluster = getCluster(config, currentContext);
             if (currentCluster != null) {
                 this.setMasterUrl(currentCluster.getServer());
@@ -423,6 +427,20 @@ public class KubernetesConfig {
         this.accessToken = accessToken;
     }
 
+    /**
+     * Returns the namespace under the following rules:
+     * <ol>
+     *     <li>If explicitly set via {@link #setCurrentNamespace(String)}. Either: /li>
+     *     <ul>
+     *         <li>When configured using using a config file, it will be the value of the namespace set for the current context or will be <code>"default"</code></li>
+     *         <li>Externally set</li>
+     *     </ul>
+     *     <li>Loaded from the cluster information in which Gravitee is deployed</li>
+     *     <li><code>null</code> if no context can be loaded from config file, or an error occurs reading cluster information</li>
+     * </ol>
+     *
+     * @return the configured namespace
+     */
     public String getCurrentNamespace() {
         if (currentNamespace == null) {
             loadCurrentNamespace();

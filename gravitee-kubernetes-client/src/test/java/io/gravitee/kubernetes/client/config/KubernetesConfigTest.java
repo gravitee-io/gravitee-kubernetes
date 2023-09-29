@@ -49,7 +49,7 @@ class KubernetesConfigTest {
     }
 
     @Test
-    void should_build_config_with_file() {
+    void should_build_config_with_file_without_namespace() {
         KubernetesConfig instance = KubernetesConfig.newInstance("src/test/resources/config.yaml");
         assertThat(instance)
             .isNotSameAs(KubernetesConfig.newInstance("src/test/resources/config.yaml"))
@@ -59,6 +59,7 @@ class KubernetesConfigTest {
         assertThat(instance.getAccessToken()).isNotBlank();
         assertThat(instance.getApiServerHost()).isEqualTo("127.0.0.1");
         assertThat(instance.getApiServerPort()).isEqualTo(6443);
+        assertThat(instance.getCurrentNamespace()).isEqualTo("default");
         assertThat(instance.getApiTimeout()).isPositive();
         assertThat(instance.getWebsocketTimeout()).isPositive();
         assertThat(instance.getClientCertData()).isNotBlank();
@@ -74,5 +75,13 @@ class KubernetesConfigTest {
         assertThat(instance.getCurrentNamespace()).isEqualTo("foo");
         assertThat(instance.getApiTimeout()).isEqualTo(1555);
         assertThat(instance.getWebsocketTimeout()).isEqualTo(2555);
+    }
+
+    @Test
+    void should_build_config_with_file_with_explicit_namespace() {
+        KubernetesConfig instance = KubernetesConfig.newInstance("src/test/resources/config_ns.yaml");
+        assertThat(instance.getCurrentNamespace()).isEqualTo("my-test-ns");
+        instance.setCurrentNamespace("foo");
+        assertThat(instance.getCurrentNamespace()).isEqualTo("foo");
     }
 }
