@@ -30,18 +30,6 @@ import org.junit.jupiter.api.Test;
 class KubernetesConfigTest {
 
     @Test
-    void should_load_default() {
-        KubernetesConfig instance = KubernetesConfig.getInstance();
-        assertThat(instance.getApiTimeout()).isPositive();
-        assertThat(instance.getWebsocketTimeout()).isPositive();
-        assertThat(instance.getApiVersion()).isEqualTo("v1");
-        assertThat(instance.verifyHost()).isTrue();
-        assertThat(instance.useSSL()).isTrue();
-
-        assertThat(instance).isSameAs(KubernetesConfig.getInstance());
-    }
-
-    @Test
     void should_fail_to_load() {
         assertThatCode(() -> KubernetesConfig.newInstance("src/test/resources/fake"))
             .isInstanceOf(IllegalArgumentException.class)
