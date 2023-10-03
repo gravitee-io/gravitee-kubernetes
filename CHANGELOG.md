@@ -1,3 +1,21 @@
+# [3.0.0](https://github.com/gravitee-io/gravitee-kubernetes/compare/2.1.1...3.0.0) (2023-10-03)
+
+
+### Bug Fixes
+
+* clear as much Sonar issue as possible ([e41825e](https://github.com/gravitee-io/gravitee-kubernetes/commit/e41825e1767e5b28891da6ee69100912aff2d4e6))
+* failing test due to static usage ([9acb555](https://github.com/gravitee-io/gravitee-kubernetes/commit/9acb5557c4113671990b5eae372cf13e0c96f2ed))
+
+
+### chore
+
+* configure pom with latest deps ([c3be0dd](https://github.com/gravitee-io/gravitee-kubernetes/commit/c3be0dd5f1ce5a6aefb0b6645de04d488b7710fa))
+
+
+### BREAKING CHANGES
+
+* bump compilation level to 17, upgrade build stack
+
 ## [2.1.1](https://github.com/gravitee-io/gravitee-kubernetes/compare/2.1.0...2.1.1) (2023-09-29)
 
 
