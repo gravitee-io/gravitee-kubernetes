@@ -42,6 +42,7 @@ public class ObjectMeta {
     private String resourceVersion;
     private String selfLink;
     private String uid;
+    private List<OwnerReference> ownerReferences;
 
     /**
      * No args constructor for use in serialization
@@ -65,6 +66,7 @@ public class ObjectMeta {
      * @param creationTimestamp
      * @param name
      * @param namespace
+     * @param ownerReferences
      */
     public ObjectMeta(
         Map<String, String> annotations,
@@ -80,7 +82,8 @@ public class ObjectMeta {
         String namespace,
         String resourceVersion,
         String selfLink,
-        String uid
+        String uid,
+        List<OwnerReference> ownerReferences
     ) {
         super();
         this.annotations = annotations;
@@ -97,6 +100,7 @@ public class ObjectMeta {
         this.resourceVersion = resourceVersion;
         this.selfLink = selfLink;
         this.uid = uid;
+        this.setOwnerReferences(ownerReferences);
     }
 
     public Map<String, String> getAnnotations() {
@@ -211,6 +215,14 @@ public class ObjectMeta {
         this.uid = uid;
     }
 
+    public List<OwnerReference> getOwnerReferences() {
+        return ownerReferences;
+    }
+
+    public void setOwnerReferences(List<OwnerReference> ownerReferences) {
+        this.ownerReferences = ownerReferences;
+    }
+
     @Override
     public String toString() {
         return (
@@ -251,6 +263,9 @@ public class ObjectMeta {
             '\'' +
             ", uid='" +
             uid +
+            '\'' +
+            ", ownerReferences='" +
+            ownerReferences +
             '\'' +
             '}'
         );
