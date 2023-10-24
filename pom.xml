@@ -29,7 +29,7 @@
     <groupId>io.gravitee.kubernetes</groupId>
     <artifactId>gravitee-kubernetes</artifactId>
     <packaging>pom</packaging>
-    <version>0.4.1</version>
+    <version>0.4.2</version>
     <name>Gravitee IO - Kubernetes</name>
 
     <modules>
