@@ -1,3 +1,14 @@
+## [3.0.1](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.0.0...3.0.1) (2023-10-24)
+
+
+### Bug Fixes
+
+* add missing header ([50dbd2a](https://github.com/gravitee-io/gravitee-kubernetes/commit/50dbd2a9b63ad2f62e207d2c997b27d72196e846))
+* add ownerReferences to the ObjectMeta ([5ee8de7](https://github.com/gravitee-io/gravitee-kubernetes/commit/5ee8de77bb73e60c2b9a28eb50df1abfe1c29c5b))
+* **deps:** update dependency io.gravitee:gravitee-bom to v6.0.16 ([6794b6d](https://github.com/gravitee-io/gravitee-kubernetes/commit/6794b6dbbc42af887c0aac7197939d6fec986c9e))
+* **deps:** update dependency io.gravitee:gravitee-parent to v22.0.10 ([4acacb0](https://github.com/gravitee-io/gravitee-kubernetes/commit/4acacb0d332d917874ebecc5b73ab879c0be3218))
+* **deps:** update fabric8-kubernetes-client monorepo to v4.13.3 ([55db6a3](https://github.com/gravitee-io/gravitee-kubernetes/commit/55db6a37b4ad96caa99a0b225ec4be08c022cd9f))
+
 # [3.0.0](https://github.com/gravitee-io/gravitee-kubernetes/compare/2.1.1...3.0.0) (2023-10-03)
 
 
