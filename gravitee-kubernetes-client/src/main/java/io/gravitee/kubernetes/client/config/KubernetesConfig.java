@@ -22,7 +22,9 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Base64;
 import java.util.List;
 import java.util.Locale;
@@ -207,11 +209,11 @@ public class KubernetesConfig {
             Cluster currentCluster = getCluster(config, currentContext);
             if (currentCluster != null) {
                 this.setMasterUrl(currentCluster.getServer());
-                this.setCaCertData(new String(Base64.getDecoder().decode(currentCluster.getCertificateAuthorityData())));
+                loadCA(currentCluster);
                 AuthInfo currentAuthInfo = getUserAuthInfo(config, currentContext);
                 if (currentAuthInfo != null) {
-                    this.setClientCertData(currentAuthInfo.getClientCertificateData());
-                    this.setClientKeyData(currentAuthInfo.getClientKeyData());
+                    loadClientCertificate(currentAuthInfo);
+                    loadClientKey(currentAuthInfo);
                     this.setAccessToken(currentAuthInfo.getToken());
                     this.setUsername(currentAuthInfo.getUsername());
                     this.setPassword(currentAuthInfo.getPassword());
@@ -225,9 +227,45 @@ public class KubernetesConfig {
         return false;
     }
 
+    private void loadCA(Cluster currentCluster) throws IOException {
+        String certificateAuthorityData = currentCluster.getCertificateAuthorityData();
+        String certificateAuthorityPemFile = currentCluster.getCertificateAuthority();
+        if (hasValue(certificateAuthorityData)) {
+            this.setCaCertData(fromBase64(certificateAuthorityData));
+        } else if (hasValue(certificateAuthorityPemFile)) {
+            this.setCaCertData(Files.readString(Path.of(certificateAuthorityPemFile)));
+        } else {
+            throw new IllegalStateException("Cannot read CA data from file: %s".formatted(file));
+        }
+    }
+
+    private void loadClientKey(AuthInfo currentAuthInfo) throws IOException {
+        String clientPrivateKeyData = currentAuthInfo.getClientKeyData();
+        String clientPrivateKeyPemFile = currentAuthInfo.getClientKey();
+        if (hasValue(clientPrivateKeyData)) {
+            this.setClientKeyData(fromBase64(clientPrivateKeyData));
+        } else if (hasValue(clientPrivateKeyPemFile)) {
+            this.setClientKeyData(Files.readString(Path.of(clientPrivateKeyPemFile)));
+        }
+    }
+
+    private void loadClientCertificate(AuthInfo currentAuthInfo) throws IOException {
+        String clientCertificateData = currentAuthInfo.getClientCertificateData();
+        String clientCertificatePemFile = currentAuthInfo.getClientCertificate();
+        if (hasValue(clientCertificateData)) {
+            this.setClientCertData(fromBase64(clientCertificateData));
+        } else if (hasValue(clientCertificatePemFile)) {
+            this.setClientCertData(Files.readString(Path.of(clientCertificatePemFile)));
+        }
+    }
+
+    private static String fromBase64(String certificateAuthorityData) {
+        return new String(Base64.getDecoder().decode(certificateAuthorityData), StandardCharsets.UTF_8);
+    }
+
     private <T> String getSystemPropertyOrEnvVar(String propertyName, T defaultValue) {
         String value = System.getProperty(propertyName);
-        if (value != null && !value.isEmpty()) {
+        if (hasValue(value)) {
             return value;
         }
 
@@ -319,7 +357,7 @@ public class KubernetesConfig {
             if (homeDir != null) return homeDir;
         }
         String home = System.getenv("HOME");
-        if (home != null && !home.isEmpty()) {
+        if (hasValue(home)) {
             File f = new File(home);
             if (f.exists() && f.isDirectory()) {
                 return home;
@@ -330,7 +368,7 @@ public class KubernetesConfig {
         return System.getProperty("user.home", ".");
     }
 
-    private static String getWinHomeDir() {
+    private String getWinHomeDir() {
         String homeDrive = System.getenv("HOMEDRIVE");
         String homePath = System.getenv("HOMEPATH");
         if (homeDrive != null && !homeDrive.isEmpty() && homePath != null && !homePath.isEmpty()) {
@@ -341,7 +379,7 @@ public class KubernetesConfig {
             }
         }
         String userProfile = System.getenv("USERPROFILE");
-        if (userProfile != null && !userProfile.isEmpty()) {
+        if (hasValue(userProfile)) {
             File f = new File(userProfile);
             if (f.exists() && f.isDirectory()) {
                 return userProfile;
@@ -376,6 +414,10 @@ public class KubernetesConfig {
             fileName = fileNames[0];
         }
         return fileName;
+    }
+
+    private boolean hasValue(String s) {
+        return s != null && !s.isBlank();
     }
 
     // Property methods
@@ -473,7 +515,7 @@ public class KubernetesConfig {
     }
 
     public void setMasterUrl(String masterUrl) {
-        if (masterUrl != null && !masterUrl.isEmpty()) {
+        if (hasValue(masterUrl)) {
             this.masterUrl = masterUrl;
             this.setApiServerHost(masterUrl.substring(8, masterUrl.lastIndexOf(":"))); // skip initial "https://"
             this.setApiServerPort(Integer.parseInt(masterUrl.substring(masterUrl.lastIndexOf(':') + 1)));

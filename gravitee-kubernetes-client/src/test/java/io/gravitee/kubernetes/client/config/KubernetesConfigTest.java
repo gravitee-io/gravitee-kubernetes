@@ -66,6 +66,14 @@ class KubernetesConfigTest {
     }
 
     @Test
+    void should_build_config_with_tls_info_as_files() {
+        KubernetesConfig instance = KubernetesConfig.newInstance("src/test/resources/config_pem_files.yaml");
+        assertThat(instance.getCaCertData()).startsWith("-----BEGIN CERTIFICATE-----");
+        assertThat(instance.getClientCertData()).startsWith("-----BEGIN CERTIFICATE-----").isNotEqualTo(instance.getCaCertData());
+        assertThat(instance.getClientKeyData()).startsWith("-----BEGIN PRIVATE KEY-----");
+    }
+
+    @Test
     void should_build_config_with_file_with_explicit_namespace() {
         KubernetesConfig instance = KubernetesConfig.newInstance("src/test/resources/config_ns.yaml");
         assertThat(instance.getCurrentNamespace()).isEqualTo("my-test-ns");
