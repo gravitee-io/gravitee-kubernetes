@@ -36,9 +36,7 @@ import io.vertx.rxjava3.core.Vertx;
 import io.vertx.rxjava3.core.http.HttpClient;
 import io.vertx.rxjava3.core.http.HttpClientRequest;
 import java.io.ByteArrayOutputStream;
-import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
-import java.util.Base64;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -208,8 +206,8 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                 final String password = "";
                 final String alias = "default";
                 KeyStore keyStore = KeyStoreUtils.initFromPem(
-                    new String(Base64.getDecoder().decode(kubeConfig().getClientCertData()), StandardCharsets.UTF_8),
-                    new String(Base64.getDecoder().decode(kubeConfig().getClientKeyData()), StandardCharsets.UTF_8),
+                    kubeConfig().getClientCertData(),
+                    kubeConfig().getClientKeyData(),
                     password,
                     alias
                 );
