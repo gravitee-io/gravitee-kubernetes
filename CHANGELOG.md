@@ -1,3 +1,10 @@
+## [3.0.2](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.0.1...3.0.2) (2023-11-17)
+
+
+### Bug Fixes
+
+* take pem files into account when reading kubeconfig ([00a771a](https://github.com/gravitee-io/gravitee-kubernetes/commit/00a771a8b1efdd8dc21219cd58924a36b6e97a1b))
+
 ## [3.0.1](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.0.0...3.0.1) (2023-10-24)
 
 
