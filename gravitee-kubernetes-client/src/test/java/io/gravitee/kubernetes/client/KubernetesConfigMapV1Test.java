@@ -22,6 +22,7 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.WatchEvent;
 import io.gravitee.kubernetes.client.api.ResourceQuery;
 import io.gravitee.kubernetes.client.api.WatchQuery;
+import io.gravitee.kubernetes.client.model.v1.Watchable;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.observers.TestObserver;
 import io.reactivex.rxjava3.subscribers.TestSubscriber;
@@ -276,6 +277,36 @@ public class KubernetesConfigMapV1Test extends KubernetesUnitTest {
 
         obs.await();
         obs.assertError(Exception.class);
+    }
+
+    @Test
+    public void shouldCreateConfigMap(TestContext tc) throws InterruptedException {
+        io.gravitee.kubernetes.client.model.v1.ConfigMap configMap = new io.gravitee.kubernetes.client.model.v1.ConfigMap();
+
+        io.gravitee.kubernetes.client.model.v1.ObjectMeta metadata = new io.gravitee.kubernetes.client.model.v1.ObjectMeta();
+        metadata.setName("test");
+        metadata.setNamespace("test");
+        configMap.setMetadata(metadata);
+
+        HashMap<String, String> data = new HashMap<>();
+        data.put("test", "test");
+        configMap.setData(data);
+
+        server.expect().post().withPath("/api/v1/namespaces/test/configmaps").andReturn(201, configMap).once();
+
+        TestObserver<Watchable> obs = kubernetesClient.create(configMap).test();
+        obs.await(5, TimeUnit.SECONDS);
+        obs.assertValue(s -> {
+            tc.assertNotNull(s);
+
+            io.gravitee.kubernetes.client.model.v1.ConfigMap value = (io.gravitee.kubernetes.client.model.v1.ConfigMap) s;
+            tc.assertEquals("test", value.getMetadata().getName());
+            tc.assertEquals("test", value.getMetadata().getNamespace());
+            tc.assertNotNull(value.getData());
+            tc.assertEquals("test", value.getData().get("test"));
+
+            return true;
+        });
     }
 
     protected ConfigMap buildConfigMap(String uid, String name, Map<String, String> data) {

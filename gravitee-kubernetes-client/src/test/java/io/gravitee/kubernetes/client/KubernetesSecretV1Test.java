@@ -24,6 +24,7 @@ import io.gravitee.kubernetes.client.api.FieldSelector;
 import io.gravitee.kubernetes.client.api.LabelSelector;
 import io.gravitee.kubernetes.client.api.ResourceQuery;
 import io.gravitee.kubernetes.client.api.WatchQuery;
+import io.gravitee.kubernetes.client.model.v1.Watchable;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.observers.TestObserver;
@@ -461,6 +462,36 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
 
         obs.await();
         obs.assertError(Exception.class);
+    }
+
+    @Test
+    public void shouldCreateSecret(TestContext tc) throws InterruptedException {
+        io.gravitee.kubernetes.client.model.v1.Secret secret = new io.gravitee.kubernetes.client.model.v1.Secret();
+
+        io.gravitee.kubernetes.client.model.v1.ObjectMeta metadata = new io.gravitee.kubernetes.client.model.v1.ObjectMeta();
+        metadata.setName("test");
+        metadata.setNamespace("test");
+        secret.setMetadata(metadata);
+
+        HashMap<String, String> data = new HashMap<>();
+        data.put("test", "test");
+        secret.setData(data);
+
+        server.expect().post().withPath("/api/v1/namespaces/test/secrets").andReturn(201, secret).once();
+
+        TestObserver<Watchable> obs = kubernetesClient.create(secret).test();
+        obs.await(5, TimeUnit.SECONDS);
+        obs.assertValue(s -> {
+            tc.assertNotNull(s);
+            io.gravitee.kubernetes.client.model.v1.Secret value = (io.gravitee.kubernetes.client.model.v1.Secret) s;
+
+            tc.assertEquals("test", value.getMetadata().getName());
+            tc.assertEquals("test", value.getMetadata().getNamespace());
+            tc.assertNotNull(value.getData());
+            tc.assertEquals("test", value.getData().get("test"));
+
+            return true;
+        });
     }
 
     protected Secret buildSecret(String namespace, String uid, String name, Map<String, String> data) {

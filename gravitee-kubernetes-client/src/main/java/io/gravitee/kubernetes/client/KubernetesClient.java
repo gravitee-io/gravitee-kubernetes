@@ -28,7 +28,29 @@ import io.reactivex.rxjava3.core.Maybe;
  * @since 3.9.11
  */
 public interface KubernetesClient {
+    /**
+     * Creates a watchable item in the given namespace.
+     *
+     * @param  item  a watchable item (such a Secret or ConfigMap)
+     * @return the saved item if there was no error
+     */
+    Maybe<Watchable> create(Watchable item);
+
+    /**
+     * Get an item given a resource query. Resource query can be just the name and the namespace of the
+     * resource or it can be also a label
+     *
+     * @param  query that is used to get a resource from the cluster
+     * @return a watchable item if it exist
+     */
     <T> Maybe<T> get(ResourceQuery<T> query);
 
+    /**
+     * Watch for different events (such as ADD, UPDATE, DELETE) for a specific resource in the cluster
+     * This method will create and maintain a websocket connection to the API server
+     *
+     * @param  query that is used to get a resource from the cluster
+     * @return a watchable item if it exist
+     */
     <E extends Event<? extends Watchable>> Flowable<E> watch(WatchQuery<E> query);
 }

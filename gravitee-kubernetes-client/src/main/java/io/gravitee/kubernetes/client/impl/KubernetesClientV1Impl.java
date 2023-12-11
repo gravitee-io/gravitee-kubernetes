@@ -15,13 +15,18 @@
  */
 package io.gravitee.kubernetes.client.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.gravitee.common.http.HttpStatusCode;
 import io.gravitee.common.http.MediaType;
 import io.gravitee.common.util.KeyStoreUtils;
 import io.gravitee.kubernetes.client.KubernetesClient;
 import io.gravitee.kubernetes.client.api.ResourceQuery;
 import io.gravitee.kubernetes.client.api.WatchQuery;
 import io.gravitee.kubernetes.client.config.KubernetesConfig;
+import io.gravitee.kubernetes.client.exception.ResourceNotFoundException;
+import io.gravitee.kubernetes.client.model.v1.ConfigMap;
 import io.gravitee.kubernetes.client.model.v1.Event;
+import io.gravitee.kubernetes.client.model.v1.Secret;
 import io.gravitee.kubernetes.client.model.v1.Watchable;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.FlowableTransformer;
@@ -76,23 +81,70 @@ public class KubernetesClientV1Impl implements KubernetesClient {
     }
 
     @Override
+    public Maybe<Watchable> create(Watchable item) {
+        try {
+            String uri = "";
+            if (item instanceof ConfigMap configMap) {
+                uri = String.format("/api/v1/namespaces/%s/configmaps", configMap.getMetadata().getNamespace());
+            } else if (item instanceof Secret secret) {
+                uri = String.format("/api/v1/namespaces/%s/secrets", secret.getMetadata().getNamespace());
+            }
+
+            LOGGER.debug("Create resource with uri [{}]", uri);
+
+            RequestOptions requestOptions = getHTTPRequestOptions(HttpMethod.POST, uri);
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            byte[] body = objectMapper.writeValueAsBytes(item);
+            return httpClient()
+                .rxRequest(requestOptions)
+                .flatMap(httpClientRequest -> httpClientRequest.rxSend(io.vertx.rxjava3.core.buffer.Buffer.buffer(body)))
+                .toMaybe()
+                .flatMap(response -> {
+                    if (
+                        response.statusCode() == HttpStatusCode.OK_200 ||
+                        response.statusCode() == HttpStatusCode.CREATED_201 ||
+                        response.statusCode() == HttpStatusCode.ACCEPTED_202
+                    ) {
+                        return response
+                            .rxBody()
+                            .toMaybe()
+                            .flatMap(buffer -> {
+                                JsonObject object = buffer.toJsonObject();
+                                Watchable resource = object.mapTo(item.getClass());
+                                if (resource != null) {
+                                    return Maybe.just(resource);
+                                } else {
+                                    return Maybe.empty();
+                                }
+                            });
+                    } else {
+                        return Maybe.error(
+                            new RuntimeException(String.format("Unable to create resource in. Error code [%d]", response.statusCode()))
+                        );
+                    }
+                });
+        } catch (Exception e) {
+            return Maybe.error(new RuntimeException(String.format("Unable to create resource in. %s", e.getMessage())));
+        }
+    }
+
+    @Override
     public <T> Maybe<T> get(ResourceQuery<T> query) {
         String uri = query.toUri();
         LOGGER.debug("Retrieve resource from [{}]", uri);
 
-        RequestOptions requestOptions = new RequestOptions();
-        requestOptions.setMethod(HttpMethod.GET);
-        requestOptions.setURI(uri);
-        requestOptions.addHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
-        if (kubeConfig().getAccessToken() != null && !kubeConfig().getAccessToken().isBlank()) {
-            requestOptions.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + kubeConfig().getAccessToken());
-        }
+        RequestOptions requestOptions = getHTTPRequestOptions(HttpMethod.GET, uri);
         return httpClient()
             .rxRequest(requestOptions)
             .flatMap(HttpClientRequest::rxSend)
             .toMaybe()
             .flatMap(response -> {
                 if (response.statusCode() != 200) {
+                    if (response.statusCode() == 404) {
+                        return Maybe.error(new ResourceNotFoundException("Can't find resource at " + uri));
+                    }
+
                     return Maybe.error(
                         new RuntimeException(
                             String.format("Unable to retrieve resource from [%s]. Error code [%d]", uri, response.statusCode())
@@ -167,6 +219,17 @@ public class KubernetesClientV1Impl implements KubernetesClient {
 
     private <E> FlowableTransformer<E, E> mergeWithFirst(Flowable<E> other) {
         return upstream -> other.materialize().mergeWith(upstream.materialize()).dematerialize(n -> n);
+    }
+
+    private RequestOptions getHTTPRequestOptions(HttpMethod post, String uri) {
+        RequestOptions requestOptions = new RequestOptions();
+        requestOptions.setMethod(post);
+        requestOptions.setURI(uri);
+        requestOptions.addHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
+        if (kubeConfig().getAccessToken() != null && !kubeConfig().getAccessToken().isBlank()) {
+            requestOptions.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + kubeConfig().getAccessToken());
+        }
+        return requestOptions;
     }
 
     private WebSocketConnectOptions buildWebSocketConnectOptions(String uri) {
