@@ -1,3 +1,10 @@
+# [3.1.0](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.0.2...3.1.0) (2023-12-12)
+
+
+### Features
+
+* create watchable resources using the client ([16f05ef](https://github.com/gravitee-io/gravitee-kubernetes/commit/16f05ef6b9ddff2921bc8d66184bdba08ac363f1))
+
 ## [3.0.2](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.0.1...3.0.2) (2023-11-17)
 
 
