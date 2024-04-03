@@ -201,7 +201,8 @@ public class KubernetesClientV1Impl implements KubernetesClient {
             })
             .doOnError(throwable -> LOGGER.error("An error occurred watching from [{}]", uri, throwable))
             .publish()
-            .refCount();
+            .refCount()
+            .repeat();
 
         watch.setEvents(events);
 
