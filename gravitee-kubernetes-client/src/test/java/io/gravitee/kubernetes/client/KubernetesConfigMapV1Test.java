@@ -153,12 +153,47 @@ public class KubernetesConfigMapV1Test extends KubernetesUnitTest {
             .done()
             .once();
 
-        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.ConfigMap>> obs =
-            kubernetesClient.watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.ConfigMap>from("/test/configmaps").build()).test();
+        var obs = kubernetesClient
+            .watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.ConfigMap>from("/test/configmaps").build())
+            .test();
 
-        obs.await();
+        obs.await(1000, TimeUnit.MILLISECONDS);
         obs.assertValueCount(4);
-        obs.assertComplete();
+        obs.assertNotComplete();
+    }
+
+    @Test
+    public void shouldRetryOnDisconnect() throws InterruptedException {
+        var path = "/api/v1/namespaces/test/configmaps?watch=true";
+
+        // accept watch and disconnect
+        server.expect().withPath(path).andUpgradeToWebSocket().open().done().once();
+
+        // accept watch again and emit values
+        server
+            .expect()
+            .get()
+            .withPath(path)
+            .andUpgradeToWebSocket()
+            .open()
+            .waitFor(EVENT_WAIT_PERIOD_MS)
+            .andEmit(new WatchEvent(configMap1, "ADDED"))
+            .immediately()
+            .andEmit(new WatchEvent(configMap2, "DELETED"))
+            .immediately()
+            .andEmit(new WatchEvent(configMap3, "ADDED"))
+            .waitFor(EVENT_WAIT_PERIOD_MS)
+            .andEmit(new WatchEvent(configMap1, "MODIFIED"))
+            .done()
+            .once();
+
+        var obs = kubernetesClient
+            .watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.ConfigMap>from("/test/configmaps").build())
+            .test();
+
+        obs.await(1000, TimeUnit.MILLISECONDS);
+        obs.assertValueCount(4);
+        obs.assertNotComplete();
     }
 
     @Test
@@ -184,7 +219,7 @@ public class KubernetesConfigMapV1Test extends KubernetesUnitTest {
         obs.await();
         obs.assertValueAt(0, configMapEvent -> configMapEvent.getType().equalsIgnoreCase("MODIFIED"));
         obs.assertValueAt(1, configMapEvent -> configMapEvent.getType().equalsIgnoreCase("DELETED"));
-        obs.assertComplete();
+        obs.assertNotComplete();
     }
 
     @Test

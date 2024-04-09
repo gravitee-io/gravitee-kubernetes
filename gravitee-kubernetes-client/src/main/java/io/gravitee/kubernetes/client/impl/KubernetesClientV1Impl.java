@@ -45,18 +45,18 @@ import java.security.KeyStore;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author Kamiel Ahmadpour (kamiel.ahmadpour at graviteesource.com)
  * @author GraviteeSource Team
  * @since 3.9.11
  */
+@Slf4j
 public class KubernetesClientV1Impl implements KubernetesClient {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(KubernetesClientV1Impl.class);
     private static final long PING_HANDLER_DELAY = 5000L;
+    public static final long DISCONNECT_REPEAT_AFTER_MILLIS = 1000L;
     private static final Vertx VERTX;
 
     static {
@@ -90,7 +90,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                 uri = String.format("/api/v1/namespaces/%s/secrets", secret.getMetadata().getNamespace());
             }
 
-            LOGGER.debug("Create resource with uri [{}]", uri);
+            log.debug("Create resource with uri [{}]", uri);
 
             RequestOptions requestOptions = getHTTPRequestOptions(HttpMethod.POST, uri);
 
@@ -132,7 +132,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
     @Override
     public <T> Maybe<T> get(ResourceQuery<T> query) {
         String uri = query.toUri();
-        LOGGER.debug("Retrieve resource from [{}]", uri);
+        log.debug("Retrieve resource from [{}]", uri);
 
         RequestOptions requestOptions = getHTTPRequestOptions(HttpMethod.GET, uri);
         return httpClient()
@@ -186,7 +186,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
     }
 
     private <E extends Event<? extends Watchable>> Watch<E> watchEvents(String watchKey, String uri, WatchQuery<E> query) {
-        LOGGER.debug("Start watching resources from [{}]", uri);
+        log.debug("Start watching resources from [{}]", uri);
 
         final Watch<E> watch = new Watch<>(watchKey);
         final WebSocketConnectOptions webSocketConnectOptions = buildWebSocketConnectOptions(uri);
@@ -199,9 +199,11 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                     mergeWithFirst(websocket.toFlowable().map(response -> response.toJsonObject().mapTo((Class<E>) query.getEventType())))
                 );
             })
-            .doOnError(throwable -> LOGGER.error("An error occurred watching from [{}]", uri, throwable))
+            .doOnError(throwable -> log.error("An error occurred watching from [{}]", uri, throwable))
             .publish()
-            .refCount();
+            .refCount()
+            .doOnTerminate(() -> log.debug("reconnecting due to websocket termination at [{}]", uri))
+            .repeatWhen(p -> p.delay(DISCONNECT_REPEAT_AFTER_MILLIS, TimeUnit.MILLISECONDS));
 
         watch.setEvents(events);
 
@@ -213,7 +215,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
             .interval(PING_HANDLER_DELAY, TimeUnit.MILLISECONDS)
             .timestamp()
             .flatMapCompletable(timed -> webSocket.rxWritePing(io.vertx.rxjava3.core.buffer.Buffer.buffer("ping")))
-            .doOnError(throwable -> LOGGER.error("An error occurred while sending ping to websocket", throwable))
+            .doOnError(throwable -> log.error("An error occurred while sending ping to websocket", throwable))
             .toFlowable();
     }
 
@@ -252,9 +254,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
     private HttpClientOptions httpClientOptions() {
         PemTrustOptions trustOptions = new PemTrustOptions();
         if (kubeConfig().getCaCertData() == null || kubeConfig().getApiServerHost() == null || kubeConfig().getApiServerPort() == 0) {
-            LOGGER.error(
-                "KubeConfig is not configured properly. If you are running locally make sure you already configured your kubeconfig"
-            );
+            log.error("KubeConfig is not configured properly. If you are running locally make sure you already configured your kubeconfig");
         }
 
         if (kubeConfig().getCaCertData() != null) {
@@ -279,7 +279,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                     new JksOptions().setPassword(password).setAlias(alias).setValue(Buffer.buffer(output.toByteArray()))
                 );
             } catch (Exception e) {
-                LOGGER.warn("Client certificate configuration failed", e);
+                log.warn("Client certificate configuration failed", e);
             }
         }
 
