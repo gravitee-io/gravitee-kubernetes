@@ -32,6 +32,7 @@ import io.reactivex.rxjava3.subscribers.TestSubscriber;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -169,7 +170,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
         obs.assertValueAt(1, secretEvent -> secretEvent.getType().equalsIgnoreCase("DELETED"));
         obs.assertValueAt(2, secretEvent -> secretEvent.getType().equalsIgnoreCase("ADDED"));
         obs.assertValueAt(3, secretEvent -> secretEvent.getType().equalsIgnoreCase("MODIFIED"));
-        obs.assertComplete();
+        obs.assertNotComplete();
     }
 
     @Test
@@ -193,7 +194,39 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
         obs.await();
         obs.assertValueAt(0, secretEvent -> secretEvent.getType().equalsIgnoreCase("MODIFIED"));
         obs.assertValueAt(1, secretEvent -> secretEvent.getType().equalsIgnoreCase("DELETED"));
-        obs.assertComplete();
+        obs.assertNotComplete();
+    }
+
+    @Test
+    public void shouldRepeatOnDisconnect() throws InterruptedException {
+        var path = "/api/v1/namespaces/test/secrets?fieldSelector=metadata.name%3Dsecret1&watch=true";
+
+        // accept watch and disconnect
+        server.expect().withPath(path).andUpgradeToWebSocket().open().done().once();
+
+        // accept watch again and emit values
+        server
+            .expect()
+            .get()
+            .withPath(path)
+            .andUpgradeToWebSocket()
+            .open()
+            .waitFor(EVENT_WAIT_PERIOD_MS)
+            .andEmit(new WatchEvent(secret1, "MODIFIED"))
+            .waitFor(EVENT_WAIT_PERIOD_MS)
+            .andEmit(new WatchEvent(secret1, "DELETED"))
+            .done()
+            .once();
+
+        var obs = kubernetesClient
+            .watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build())
+            .test();
+
+        obs.await();
+        obs.assertValueCount(2);
+        obs.assertValueAt(0, secretEvent -> secretEvent.getType().equalsIgnoreCase("MODIFIED"));
+        obs.assertValueAt(1, secretEvent -> secretEvent.getType().equalsIgnoreCase("DELETED"));
+        obs.assertNotComplete();
     }
 
     @Test
@@ -217,7 +250,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
         obs.await();
         obs.assertValueAt(0, secretEvent -> secretEvent.getType().equalsIgnoreCase("MODIFIED"));
         obs.assertValueAt(1, secretEvent -> secretEvent.getType().equalsIgnoreCase("DELETED"));
-        obs.assertComplete();
+        obs.assertNotComplete();
     }
 
     @Test
@@ -235,17 +268,17 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .done()
             .once();
 
-        final Flowable<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> watch1 =
-            kubernetesClient.watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build());
-        final Flowable<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> watch2 =
-            kubernetesClient.watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build());
-        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs = Flowable
-            .mergeArray(watch1, watch2)
-            .test();
+        var watch1 = kubernetesClient.watch(
+            WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build()
+        );
+        var watch2 = kubernetesClient.watch(
+            WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build()
+        );
 
+        var obs = Flowable.merge(List.of(watch1, watch2)).test();
         obs.await();
         obs.assertValueCount(4);
-        obs.assertComplete();
+        obs.assertNotComplete();
     }
 
     @Test
@@ -281,7 +314,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
 
         obs.await();
         obs.assertValueCount(2);
-        obs.assertComplete();
+        obs.assertNotComplete();
     }
 
     @Test
@@ -299,23 +332,11 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .done()
             .once();
 
-        server
-            .expect()
-            .get()
-            .withPath("/api/v1/namespaces/test/secrets?fieldSelector=metadata.name%3Dsecret1&watch=true")
-            .andUpgradeToWebSocket()
-            .open()
-            .waitFor(EVENT_WAIT_PERIOD_MS)
-            .andEmit(new WatchEvent(secret1, "MODIFIED"))
-            .waitFor(EVENT_WAIT_PERIOD_MS)
-            .andEmit(new WatchEvent(secret1, "DELETED"))
-            .done()
-            .once();
-
         final Flowable<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> watch1 =
             kubernetesClient
                 .watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build())
                 .doOnSubscribe(Subscription::cancel);
+
         final Flowable<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> watch2 =
             kubernetesClient.watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build());
 
@@ -328,7 +349,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
 
         obs2.await();
         obs2.assertValueCount(2);
-        obs2.assertComplete();
+        obs2.assertNotComplete();
     }
 
     @Test
@@ -367,7 +388,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
 
         obs.await();
         obs.assertValueCount(3);
-        obs.assertComplete();
+        obs.assertNotComplete();
     }
 
     @Test
@@ -434,7 +455,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
         obs.await();
         obs.assertValueAt(0, secretEvent -> secretEvent.getType().equalsIgnoreCase("ADDED"));
         obs.assertValueAt(1, secretEvent -> secretEvent.getType().equalsIgnoreCase("MODIFIED"));
-        obs.assertComplete();
+        obs.assertNotComplete();
     }
 
     @Test
