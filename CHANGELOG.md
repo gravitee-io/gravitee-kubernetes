@@ -1,3 +1,10 @@
+# [3.2.0](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.1.0...3.2.0) (2024-04-09)
+
+
+### Features
+
+* repeat watch on websocket disconnect ([b8e7a3d](https://github.com/gravitee-io/gravitee-kubernetes/commit/b8e7a3de7cfec544538efb00dacc894fa0b80bd8))
+
 # [3.1.0](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.0.2...3.1.0) (2023-12-12)
 
 
