@@ -28,7 +28,7 @@ public class ObjectMeta {
     private final Map<String, String> labels = new HashMap<>();
 
     public ObjectMeta(String name) {
-        this.name = name;
+        this.name = sanitizeName(name);
     }
 
     public String getName() {
@@ -49,5 +49,9 @@ public class ObjectMeta {
 
     public void addAnnotation(String annotation, String value) {
         annotations.put(annotation, value);
+    }
+
+    private String sanitizeName(String name) {
+        return name.toLowerCase().replaceAll("[\\s_]", "-").replaceAll("[^-.a-z0-9]", "");
     }
 }
