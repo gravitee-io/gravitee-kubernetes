@@ -1,3 +1,10 @@
+## [3.2.1](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.2.0...3.2.1) (2024-05-16)
+
+
+### Bug Fixes
+
+* ensure custom resources names are rfc 1123 compliant ([f9deec5](https://github.com/gravitee-io/gravitee-kubernetes/commit/f9deec592acbbe6383892c3f0899b317ee8c7cf7))
+
 # [3.2.0](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.1.0...3.2.0) (2024-04-09)
 
 
