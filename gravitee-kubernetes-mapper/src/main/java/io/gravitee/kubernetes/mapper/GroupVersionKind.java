@@ -19,7 +19,8 @@ package io.gravitee.kubernetes.mapper;
  * @author GraviteeSource Team
  */
 public enum GroupVersionKind {
-    GIO_V1_ALPHA_1_API_DEFINITION("gravitee.io", "v1alpha1", "ApiDefinition");
+    GIO_V1_ALPHA_1_API_DEFINITION("gravitee.io", "v1alpha1", "ApiDefinition"),
+    GIO_V1_ALPHA_1_API_V4_DEFINITION("gravitee.io", "v1alpha1", "ApiV4Definition");
 
     private final String group;
     private final String version;
