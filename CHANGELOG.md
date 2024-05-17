@@ -1,3 +1,15 @@
+# [3.3.0](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.2.1...3.3.0) (2024-05-17)
+
+
+### Bug Fixes
+
+* **deps:** update dependency io.gravitee:gravitee-bom to v6.0.47 ([cb4293c](https://github.com/gravitee-io/gravitee-kubernetes/commit/cb4293c4cff80b73d3590132744ad38bb8fc7add))
+
+
+### Features
+
+* add api definition v4 group version kind ([281f169](https://github.com/gravitee-io/gravitee-kubernetes/commit/281f169f19df0c4b3f596d3a81ba3d9ff0146ddb))
+
 ## [3.2.1](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.2.0...3.2.1) (2024-05-16)
 
 
