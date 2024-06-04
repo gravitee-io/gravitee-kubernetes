@@ -135,4 +135,9 @@ public class Secret implements Serializable, Watchable {
             '}'
         );
     }
+
+    @Override
+    public ObjectMeta metaData() {
+        return this.metadata;
+    }
 }

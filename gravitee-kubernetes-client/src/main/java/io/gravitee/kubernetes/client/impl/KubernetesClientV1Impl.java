@@ -24,10 +24,7 @@ import io.gravitee.kubernetes.client.api.ResourceQuery;
 import io.gravitee.kubernetes.client.api.WatchQuery;
 import io.gravitee.kubernetes.client.config.KubernetesConfig;
 import io.gravitee.kubernetes.client.exception.ResourceNotFoundException;
-import io.gravitee.kubernetes.client.model.v1.ConfigMap;
-import io.gravitee.kubernetes.client.model.v1.Event;
-import io.gravitee.kubernetes.client.model.v1.Secret;
-import io.gravitee.kubernetes.client.model.v1.Watchable;
+import io.gravitee.kubernetes.client.model.v1.*;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.FlowableTransformer;
 import io.reactivex.rxjava3.core.Maybe;
@@ -196,7 +193,22 @@ public class KubernetesClientV1Impl implements KubernetesClient {
             .flatMapPublisher(websocket -> {
                 Flowable<E> pingFlowable = websocketPing(websocket);
                 return pingFlowable.compose(
-                    mergeWithFirst(websocket.toFlowable().map(response -> response.toJsonObject().mapTo((Class<E>) query.getEventType())))
+                    mergeWithFirst(
+                        websocket
+                            .toFlowable()
+                            .map(response -> response.toJsonObject().mapTo((Class<E>) query.getEventType()))
+                            .filter(e -> {
+                                ObjectMeta metaData = e.getObject().metaData();
+                                if (
+                                    !watch.resourceVersionCache.containsKey(metaData.getName()) ||
+                                    !watch.resourceVersionCache.get(metaData.getName()).equals(metaData.getResourceVersion())
+                                ) {
+                                    watch.resourceVersionCache.put(metaData.getName(), metaData.getResourceVersion());
+                                    return true;
+                                }
+                                return false;
+                            })
+                    )
                 );
             })
             .doOnError(throwable -> log.error("An error occurred watching from [{}]", uri, throwable))
@@ -305,9 +317,11 @@ public class KubernetesClientV1Impl implements KubernetesClient {
 
         private final String key;
         private Flowable<E> events;
+        private final Map<String, String> resourceVersionCache;
 
         public Watch(String key) {
             this.key = key;
+            this.resourceVersionCache = new ConcurrentHashMap<>();
         }
 
         public Flowable<E> getEvents() {

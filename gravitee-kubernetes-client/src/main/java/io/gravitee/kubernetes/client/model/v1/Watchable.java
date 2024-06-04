@@ -15,4 +15,6 @@
  */
 package io.gravitee.kubernetes.client.model.v1;
 
-public interface Watchable {}
+public interface Watchable {
+    ObjectMeta metaData();
+}

@@ -31,10 +31,7 @@ import io.reactivex.rxjava3.observers.TestObserver;
 import io.reactivex.rxjava3.subscribers.TestSubscriber;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Before;
@@ -157,7 +154,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .waitFor(EVENT_WAIT_PERIOD_MS)
             .andEmit(new WatchEvent(secret3, "ADDED"))
             .waitFor(EVENT_WAIT_PERIOD_MS)
-            .andEmit(new WatchEvent(secret1, "MODIFIED"))
+            .andEmit(new WatchEvent(incrementResourceVersion(secret1), "MODIFIED"))
             .done()
             .once();
 
@@ -184,7 +181,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .waitFor(EVENT_WAIT_PERIOD_MS)
             .andEmit(new WatchEvent(secret1, "MODIFIED"))
             .waitFor(EVENT_WAIT_PERIOD_MS)
-            .andEmit(new WatchEvent(secret1, "DELETED"))
+            .andEmit(new WatchEvent(incrementResourceVersion(secret1), "DELETED"))
             .done()
             .once();
 
@@ -214,7 +211,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .waitFor(EVENT_WAIT_PERIOD_MS)
             .andEmit(new WatchEvent(secret1, "MODIFIED"))
             .waitFor(EVENT_WAIT_PERIOD_MS)
-            .andEmit(new WatchEvent(secret1, "DELETED"))
+            .andEmit(new WatchEvent(incrementResourceVersion(secret1), "DELETED"))
             .done()
             .once();
 
@@ -240,7 +237,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .waitFor(EVENT_WAIT_PERIOD_MS)
             .andEmit(new WatchEvent(secret1, "MODIFIED"))
             .waitFor(EVENT_WAIT_PERIOD_MS)
-            .andEmit(new WatchEvent(secret1, "DELETED"))
+            .andEmit(new WatchEvent(incrementResourceVersion(secret1), "DELETED"))
             .done()
             .once();
 
@@ -264,7 +261,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .waitFor(EVENT_WAIT_PERIOD_MS)
             .andEmit(new WatchEvent(secret1, "MODIFIED"))
             .waitFor(EVENT_WAIT_PERIOD_MS)
-            .andEmit(new WatchEvent(secret1, "DELETED"))
+            .andEmit(new WatchEvent(incrementResourceVersion(secret1), "DELETED"))
             .done()
             .once();
 
@@ -328,7 +325,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .waitFor(EVENT_WAIT_PERIOD_MS)
             .andEmit(new WatchEvent(secret1, "MODIFIED"))
             .waitFor(EVENT_WAIT_PERIOD_MS)
-            .andEmit(new WatchEvent(secret1, "DELETED"))
+            .andEmit(new WatchEvent(incrementResourceVersion(secret1), "DELETED"))
             .done()
             .once();
 
@@ -363,7 +360,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .waitFor(EVENT_WAIT_PERIOD_MS)
             .andEmit(new WatchEvent(secret1, "MODIFIED"))
             .waitFor(EVENT_WAIT_PERIOD_MS)
-            .andEmit(new WatchEvent(secret1, "DELETED"))
+            .andEmit(new WatchEvent(incrementResourceVersion(secret1), "DELETED"))
             .done()
             .once();
 
@@ -429,7 +426,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .waitFor(EVENT_WAIT_PERIOD_MS)
             .andEmit(new WatchEvent(secret1, "ADDED"))
             .waitFor(EVENT_WAIT_PERIOD_MS)
-            .andEmit(new WatchEvent(secret1, "ERROR"))
+            .andEmit(new WatchEvent(incrementResourceVersion(secret1), "ERROR"))
             .done()
             .once();
 
@@ -441,7 +438,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             .andUpgradeToWebSocket()
             .open()
             .waitFor(EVENT_WAIT_PERIOD_MS)
-            .andEmit(new WatchEvent(secret1, "MODIFIED"))
+            .andEmit(new WatchEvent(incrementResourceVersion(secret1), "MODIFIED"))
             .done()
             .once();
 
@@ -520,12 +517,19 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
         metadata.setNamespace(namespace);
         metadata.setName(name);
         metadata.setUid(uid);
+        metadata.setResourceVersion("1");
 
         Secret secret = new Secret();
         secret.setMetadata(metadata);
         secret.setData(data);
         secret.setApiVersion("1.0");
 
+        return secret;
+    }
+
+    private Secret incrementResourceVersion(Secret secret) {
+        int i = Integer.parseInt(secret.getMetadata().getResourceVersion());
+        secret.getMetadata().setResourceVersion(String.valueOf(i + 1));
         return secret;
     }
 }
