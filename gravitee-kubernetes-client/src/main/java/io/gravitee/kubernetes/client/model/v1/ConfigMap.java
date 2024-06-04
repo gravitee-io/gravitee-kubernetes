@@ -144,4 +144,9 @@ public class ConfigMap implements Serializable, Watchable {
             '}'
         );
     }
+
+    @Override
+    public ObjectMeta metaData() {
+        return this.metadata;
+    }
 }

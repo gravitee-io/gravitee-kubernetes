@@ -15,11 +15,7 @@
  */
 package io.gravitee.kubernetes.client;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
-import io.fabric8.kubernetes.api.model.ConfigMapListBuilder;
-import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.api.model.WatchEvent;
+import io.fabric8.kubernetes.api.model.*;
 import io.gravitee.kubernetes.client.api.ResourceQuery;
 import io.gravitee.kubernetes.client.api.WatchQuery;
 import io.gravitee.kubernetes.client.model.v1.Watchable;
@@ -149,7 +145,7 @@ public class KubernetesConfigMapV1Test extends KubernetesUnitTest {
             .immediately()
             .andEmit(new WatchEvent(configMap3, "ADDED"))
             .waitFor(EVENT_WAIT_PERIOD_MS)
-            .andEmit(new WatchEvent(configMap1, "MODIFIED"))
+            .andEmit(new WatchEvent(incrementResourceVersion(configMap1), "MODIFIED"))
             .done()
             .once();
 
@@ -183,7 +179,7 @@ public class KubernetesConfigMapV1Test extends KubernetesUnitTest {
             .immediately()
             .andEmit(new WatchEvent(configMap3, "ADDED"))
             .waitFor(EVENT_WAIT_PERIOD_MS)
-            .andEmit(new WatchEvent(configMap1, "MODIFIED"))
+            .andEmit(new WatchEvent(incrementResourceVersion(configMap1), "MODIFIED"))
             .done()
             .once();
 
@@ -207,7 +203,7 @@ public class KubernetesConfigMapV1Test extends KubernetesUnitTest {
             .waitFor(EVENT_WAIT_PERIOD_MS)
             .andEmit(new WatchEvent(configMap1, "MODIFIED"))
             .waitFor(EVENT_WAIT_PERIOD_MS)
-            .andEmit(new WatchEvent(configMap1, "DELETED"))
+            .andEmit(new WatchEvent(incrementResourceVersion(configMap1), "DELETED"))
             .done()
             .once();
 
@@ -233,7 +229,7 @@ public class KubernetesConfigMapV1Test extends KubernetesUnitTest {
             .waitFor(EVENT_WAIT_PERIOD_MS)
             .andEmit(new WatchEvent(configMap1, "MODIFIED"))
             .waitFor(EVENT_WAIT_PERIOD_MS)
-            .andEmit(new WatchEvent(configMap1, "ERROR"))
+            .andEmit(new WatchEvent(incrementResourceVersion(configMap1), "ERROR"))
             .done()
             .once();
 
@@ -349,11 +345,18 @@ public class KubernetesConfigMapV1Test extends KubernetesUnitTest {
         metadata.setNamespace("test");
         metadata.setName(name);
         metadata.setUid(uid);
+        metadata.setResourceVersion("1");
 
         ConfigMap configMap = new ConfigMap();
         configMap.setMetadata(metadata);
         configMap.setData(data);
 
+        return configMap;
+    }
+
+    private ConfigMap incrementResourceVersion(ConfigMap configMap) {
+        int i = Integer.parseInt(configMap.getMetadata().getResourceVersion());
+        configMap.getMetadata().setResourceVersion(String.valueOf(i + 1));
         return configMap;
     }
 }
