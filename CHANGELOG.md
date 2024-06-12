@@ -1,3 +1,10 @@
+## [3.3.1](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.3.0...3.3.1) (2024-06-12)
+
+
+### Bug Fixes
+
+* skip processing up-to-date config maps on reconnect ([fa7e9e6](https://github.com/gravitee-io/gravitee-kubernetes/commit/fa7e9e6f26e81e47de61ff4f5568b30390046c9b))
+
 # [3.3.0](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.2.1...3.3.0) (2024-05-17)
 
 
