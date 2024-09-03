@@ -18,6 +18,7 @@ package io.gravitee.kubernetes.client;
 import io.fabric8.kubernetes.api.model.*;
 import io.gravitee.kubernetes.client.api.ResourceQuery;
 import io.gravitee.kubernetes.client.api.WatchQuery;
+import io.gravitee.kubernetes.client.exception.ResourceVersionNotFoundException;
 import io.gravitee.kubernetes.client.model.v1.Watchable;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.observers.TestObserver;
@@ -87,7 +88,40 @@ public class KubernetesConfigMapV1Test extends KubernetesUnitTest {
     }
 
     @Test
-    public void shouldGetConfigMap1(TestContext tc) throws InterruptedException {
+    public void shouldGetConfigMapListWithResourceVersion(TestContext testContext) throws InterruptedException {
+        server
+            .expect()
+            .get()
+            .withPath("/api/v1/namespaces/test/configmaps?resourceVersion=12435")
+            .andReturn(
+                200,
+                new ConfigMapListBuilder().addToItems(configMap1, configMap2).withNewMetadata("1", 2L, "1234", "/selflink").build()
+            )
+            .once();
+
+        kubernetesClient
+            .get(ResourceQuery.configMaps("test").resourceVersion("12435").build())
+            .test()
+            .await()
+            .assertValue(configMapList -> {
+                testContext.assertEquals(2, configMapList.getItems().size());
+                return true;
+            });
+    }
+
+    @Test
+    public void shouldReturnResourceVersionNotFoundErrorOn410_GONE() throws InterruptedException {
+        server.expect().get().withPath("/api/v1/namespaces/test/configmaps?resourceVersion=12435").andReturn(410, null).once();
+
+        kubernetesClient
+            .get(ResourceQuery.configMaps("test").resourceVersion("12435").build())
+            .test()
+            .await()
+            .assertFailure(ResourceVersionNotFoundException.class);
+    }
+
+    @Test
+    public void shouldGetConfigMap(TestContext tc) throws InterruptedException {
         server
             .expect()
             .get()

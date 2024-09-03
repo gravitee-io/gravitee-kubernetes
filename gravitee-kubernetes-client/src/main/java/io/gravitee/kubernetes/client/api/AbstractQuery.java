@@ -18,6 +18,7 @@ package io.gravitee.kubernetes.client.api;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import lombok.Getter;
 import org.springframework.util.StringUtils;
 
 /**
@@ -29,9 +30,19 @@ class AbstractQuery<T> {
     private static final String API_VERSION = "/api/v1";
 
     protected final Type type;
+
+    @Getter
     protected final String namespace;
+
+    @Getter
     protected final String resource;
+
+    @Getter
     protected final String resourceKey;
+
+    @Getter
+    protected final String resourceVersion;
+
     protected final List<FieldSelector> fieldSelectors;
     protected final List<LabelSelector> labelSelectors;
 
@@ -40,6 +51,7 @@ class AbstractQuery<T> {
         Type type,
         String resource,
         String resourceKey,
+        String resourceVersion,
         List<FieldSelector> fieldSelectors,
         List<LabelSelector> labelSelectors
     ) {
@@ -47,6 +59,7 @@ class AbstractQuery<T> {
         this.namespace = namespace;
         this.resource = resource;
         this.resourceKey = resourceKey;
+        this.resourceVersion = resourceVersion;
         this.fieldSelectors = fieldSelectors;
         this.labelSelectors = labelSelectors;
     }
@@ -57,18 +70,6 @@ class AbstractQuery<T> {
         } else {
             return (Class<T>) this.type.listType();
         }
-    }
-
-    public String getResource() {
-        return resource;
-    }
-
-    public String getNamespace() {
-        return namespace;
-    }
-
-    public String getResourceKey() {
-        return resourceKey;
     }
 
     private boolean singleResource() {
@@ -115,6 +116,10 @@ class AbstractQuery<T> {
             parameters.add(labelSelectorBuilder.toString());
         }
 
+        if (resourceVersion != null && !resourceVersion.isEmpty()) {
+            parameters.add("resourceVersion=" + resourceVersion);
+        }
+
         return parameters;
     }
 
@@ -151,6 +156,7 @@ class AbstractQuery<T> {
         protected String namespace;
         protected String resource;
         protected String resourceKey;
+        protected String resourceVersion;
         protected final List<FieldSelector> fieldSelectors = new ArrayList<>();
         protected final List<LabelSelector> labelSelectors = new ArrayList<>();
 
@@ -180,6 +186,11 @@ class AbstractQuery<T> {
 
         public AbstractQueryBuilder<T> resourceKey(String resourceKey) {
             this.resourceKey = resourceKey;
+            return this;
+        }
+
+        public AbstractQueryBuilder<T> resourceVersion(String resourceVersion) {
+            this.resourceVersion = resourceVersion;
             return this;
         }
     }

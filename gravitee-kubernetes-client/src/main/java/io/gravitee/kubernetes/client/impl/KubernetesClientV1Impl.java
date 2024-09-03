@@ -24,6 +24,7 @@ import io.gravitee.kubernetes.client.api.ResourceQuery;
 import io.gravitee.kubernetes.client.api.WatchQuery;
 import io.gravitee.kubernetes.client.config.KubernetesConfig;
 import io.gravitee.kubernetes.client.exception.ResourceNotFoundException;
+import io.gravitee.kubernetes.client.exception.ResourceVersionNotFoundException;
 import io.gravitee.kubernetes.client.model.v1.*;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.FlowableTransformer;
@@ -140,6 +141,10 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                 if (response.statusCode() != 200) {
                     if (response.statusCode() == 404) {
                         return Maybe.error(new ResourceNotFoundException("Can't find resource at " + uri));
+                    }
+
+                    if (response.statusCode() == 410) {
+                        return Maybe.error(new ResourceVersionNotFoundException(query.getResourceVersion()));
                     }
 
                     return Maybe.error(
