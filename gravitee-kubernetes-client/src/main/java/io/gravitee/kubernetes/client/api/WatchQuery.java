@@ -35,11 +35,12 @@ public class WatchQuery<E extends Event<? extends Watchable>> extends AbstractQu
         Type type,
         String resource,
         String resourceKey,
+        String resourceVersion,
         List<FieldSelector> fieldSelectors,
         List<LabelSelector> labelSelectors,
         boolean allowWatchBookmarks
     ) {
-        super(namespace, type, resource, resourceKey, fieldSelectors, labelSelectors);
+        super(namespace, type, resource, resourceKey, resourceVersion, fieldSelectors, labelSelectors);
         this.allowWatchBookmarks = allowWatchBookmarks;
     }
 
@@ -141,13 +142,28 @@ public class WatchQuery<E extends Event<? extends Watchable>> extends AbstractQu
             return this;
         }
 
+        @Override
+        public WatchQueryBuilder<T, E> resourceVersion(String resourceVersion) {
+            super.resourceVersion(resourceVersion);
+            return this;
+        }
+
         public WatchQueryBuilder<T, E> allowWatchBookmarks(boolean allowWatchBookmarks) {
             this.allowWatchBookmarks = allowWatchBookmarks;
             return this;
         }
 
         public WatchQuery<E> build() {
-            return new WatchQuery<>(namespace, type, resource, resourceKey, fieldSelectors, labelSelectors, allowWatchBookmarks);
+            return new WatchQuery<>(
+                namespace,
+                type,
+                resource,
+                resourceKey,
+                resourceVersion,
+                fieldSelectors,
+                labelSelectors,
+                allowWatchBookmarks
+            );
         }
     }
 }

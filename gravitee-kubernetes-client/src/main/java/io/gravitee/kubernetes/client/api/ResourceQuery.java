@@ -32,10 +32,11 @@ public class ResourceQuery<T> extends AbstractQuery<T> {
         Type type,
         String resource,
         String resourceKey,
+        String resourceVersion,
         List<FieldSelector> fieldSelectors,
         List<LabelSelector> labelSelectors
     ) {
-        super(namespace, type, resource, resourceKey, fieldSelectors, labelSelectors);
+        super(namespace, type, resource, resourceKey, resourceVersion, fieldSelectors, labelSelectors);
     }
 
     public static QueryBuilder<ConfigMapList> configMaps() {
@@ -113,8 +114,14 @@ public class ResourceQuery<T> extends AbstractQuery<T> {
             return this;
         }
 
+        @Override
+        public QueryBuilder<T> resourceVersion(String resourceVersion) {
+            super.resourceVersion(resourceVersion);
+            return this;
+        }
+
         public ResourceQuery<T> build() {
-            return new ResourceQuery<>(namespace, type, resource, resourceKey, fieldSelectors, labelSelectors);
+            return new ResourceQuery<>(namespace, type, resource, resourceKey, resourceVersion, fieldSelectors, labelSelectors);
         }
     }
 }
