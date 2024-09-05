@@ -1,3 +1,10 @@
+# [3.4.0](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.3.1...3.4.0) (2024-09-05)
+
+
+### Features
+
+* allow to pass resource version for list and watch ([cf4709d](https://github.com/gravitee-io/gravitee-kubernetes/commit/cf4709d99bd21a6b1633f1b77ac58e68bd9e4860))
+
 ## [3.3.1](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.3.0...3.3.1) (2024-06-12)
 
 
