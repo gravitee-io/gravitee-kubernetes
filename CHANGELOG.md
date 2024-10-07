@@ -1,3 +1,11 @@
+## [3.4.1](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.4.0...3.4.1) (2024-10-07)
+
+
+### Bug Fixes
+
+* **deps:** update dependency io.gravitee:gravitee-parent to v22.1.14 ([1fbd121](https://github.com/gravitee-io/gravitee-kubernetes/commit/1fbd121e072542f569dcc3dff3eae6a98137dfe7))
+* solve the issue NPE on old resource versions ([0794f78](https://github.com/gravitee-io/gravitee-kubernetes/commit/0794f789bea6d29495210ea0c32eb5e817273666))
+
 # [3.4.0](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.3.1...3.4.0) (2024-09-05)
 
 
