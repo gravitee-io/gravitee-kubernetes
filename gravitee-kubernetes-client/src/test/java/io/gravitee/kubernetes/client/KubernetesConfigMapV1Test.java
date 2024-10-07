@@ -19,6 +19,7 @@ import io.fabric8.kubernetes.api.model.*;
 import io.gravitee.kubernetes.client.api.ResourceQuery;
 import io.gravitee.kubernetes.client.api.WatchQuery;
 import io.gravitee.kubernetes.client.exception.ResourceVersionNotFoundException;
+import io.gravitee.kubernetes.client.model.v1.Error.ErrorObject;
 import io.gravitee.kubernetes.client.model.v1.Watchable;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.observers.TestObserver;
@@ -35,6 +36,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.validation.ObjectError;
 
 /**
  * @author Kamiel Ahmadpour (kamiel.ahmadpour at graviteesource.com)
@@ -115,6 +117,33 @@ public class KubernetesConfigMapV1Test extends KubernetesUnitTest {
 
         kubernetesClient
             .get(ResourceQuery.configMaps("test").resourceVersion("12435").build())
+            .test()
+            .await()
+            .assertFailure(ResourceVersionNotFoundException.class);
+    }
+
+    @Test
+    public void shouldThrowReturnResourceVersionNotFoundError() throws InterruptedException {
+        var errorObject = new ErrorObject();
+        errorObject.setCode(410);
+
+        var error = new io.gravitee.kubernetes.client.model.v1.Error();
+        error.setType("ERROR");
+        error.setObject(errorObject);
+
+        server
+            .expect()
+            .get()
+            .withPath("/api/v1/namespaces/test/configmaps?resourceVersion=12435&watch=true")
+            .andUpgradeToWebSocket()
+            .open()
+            .immediately()
+            .andEmit(error)
+            .done()
+            .once();
+
+        kubernetesClient
+            .watch(WatchQuery.configMaps("test").resourceVersion("12435").build())
             .test()
             .await()
             .assertFailure(ResourceVersionNotFoundException.class);

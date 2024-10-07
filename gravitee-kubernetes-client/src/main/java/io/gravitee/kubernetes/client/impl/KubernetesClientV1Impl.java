@@ -26,6 +26,7 @@ import io.gravitee.kubernetes.client.config.KubernetesConfig;
 import io.gravitee.kubernetes.client.exception.ResourceNotFoundException;
 import io.gravitee.kubernetes.client.exception.ResourceVersionNotFoundException;
 import io.gravitee.kubernetes.client.model.v1.*;
+import io.gravitee.kubernetes.client.model.v1.Error;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.FlowableTransformer;
 import io.reactivex.rxjava3.core.Maybe;
@@ -201,7 +202,18 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                     mergeWithFirst(
                         websocket
                             .toFlowable()
-                            .map(response -> response.toJsonObject().mapTo((Class<E>) query.getEventType()))
+                            .map(response -> {
+                                E e = response.toJsonObject().mapTo((Class<E>) query.getEventType());
+                                if ("ERROR".equals(e.getType())) {
+                                    Error error = response.toJsonObject().mapTo(Error.class);
+                                    if (error.getObject() != null && error.getObject().getCode() == 410) {
+                                        throw new ResourceVersionNotFoundException(query.getResourceVersion());
+                                    } else {
+                                        throw new RuntimeException(e.toString());
+                                    }
+                                }
+                                return e;
+                            })
                             .filter(e -> {
                                 ObjectMeta metaData = e.getObject().metaData();
                                 if (
