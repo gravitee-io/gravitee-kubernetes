@@ -228,7 +228,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                     )
                 );
             })
-            .doOnError(throwable -> log.error("An error occurred watching from [{}]", uri, throwable))
+            .doOnError(throwable -> log.debug("An error occurred watching from [{}]", uri, throwable))
             .publish()
             .refCount()
             .doOnTerminate(() -> log.debug("reconnecting due to websocket termination at [{}]", uri))
