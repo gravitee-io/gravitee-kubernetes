@@ -1,3 +1,11 @@
+## [3.4.2](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.4.1...3.4.2) (2025-01-16)
+
+
+### Bug Fixes
+
+* **deps:** update dependency io.gravitee.common:gravitee-common to v3.4.1 ([343c58b](https://github.com/gravitee-io/gravitee-kubernetes/commit/343c58b84feb25f631c200acb3a68ed9fbd08611))
+* silent retried kubernetes sync errors ([a844ff2](https://github.com/gravitee-io/gravitee-kubernetes/commit/a844ff2065a034e162584be2dba074343ad5d996))
+
 ## [3.4.1](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.4.0...3.4.1) (2024-10-07)
 
 
