@@ -45,6 +45,7 @@ public class KubernetesConfig {
     public static final String KUBERNETES_SERVICE_PORT_HTTPS_PROPERTY = "KUBERNETES_SERVICE_PORT_HTTPS";
     public static final String KUBERNETES_SERVICE_ACCOUNT_TOKEN_PATH = "KUBERNETES_SERVICE_ACCOUNT_TOKEN_PATH";
     public static final String KUBERNETES_SERVICE_ACCOUNT_CA_CRT_PATH = "KUBERNETES_SERVICE_ACCOUNT_CA_CRT_PATH";
+    public static final String KUBERNETES_SERVICE_ACCOUNT_TOKEN_PROJECTION_ENABLED = "KUBERNETES_SERVICE_ACCOUNT_TOKEN_PROJECTION_ENABLED";
     public static final String KUBERNETES_CURRENT_NAMESPACE_PATH = "KUBERNETES_CURRENT_NAMESPACE";
     public static final String KUBERNETES_KUBECONFIG_FILE = "kubeconfig";
     static final Long DEFAULT_WEBSOCKET_TIMEOUT = 5 * 60 * 1000L;
@@ -55,6 +56,8 @@ public class KubernetesConfig {
     private boolean verifyHost = true;
     private boolean useSSL = true;
     private String accessToken;
+    private boolean accessTokenProjectionEnabled;
+    private long accessTokenLastReload;
     private String currentNamespace;
     private long websocketTimeout = DEFAULT_WEBSOCKET_TIMEOUT;
     private int apiTimeout = DEFAULT_API_TIMEOUT;
@@ -109,6 +112,9 @@ public class KubernetesConfig {
 
             setApiServerHost(host);
             setApiServerPort(Integer.parseInt(port));
+            setAccessTokenProjectionEnabled(
+                Boolean.parseBoolean(getSystemPropertyOrEnvVar(KUBERNETES_SERVICE_ACCOUNT_TOKEN_PROJECTION_ENABLED, "false"))
+            );
             return true;
         } else {
             LOGGER.error("Unable to resolve the API Server URL");
@@ -154,6 +160,7 @@ public class KubernetesConfig {
             if (serviceAccountAccessTokenExists) {
                 LOGGER.debug("Found service account token at: [{}].", tokenFilePath);
                 this.setAccessToken(new String(Files.readAllBytes(new File(tokenFilePath).toPath())));
+                this.accessTokenLastReload = System.currentTimeMillis();
                 return true;
             }
         } catch (IOException e) {
@@ -462,6 +469,12 @@ public class KubernetesConfig {
     }
 
     public String getAccessToken() {
+        if (isAccessTokenProjectionEnabled()) {
+            //reload only if at least 5 minutes have passed since the last reload
+            if (System.currentTimeMillis() - this.accessTokenLastReload > 300_000L) {
+                loadServiceAccountToken();
+            }
+        }
         return accessToken;
     }
 
@@ -568,5 +581,13 @@ public class KubernetesConfig {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public boolean isAccessTokenProjectionEnabled() {
+        return accessTokenProjectionEnabled;
+    }
+
+    public void setAccessTokenProjectionEnabled(boolean accessTokenProjectionEnabled) {
+        this.accessTokenProjectionEnabled = accessTokenProjectionEnabled;
     }
 }

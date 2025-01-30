@@ -229,6 +229,20 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                 );
             })
             .doOnError(throwable -> log.debug("An error occurred watching from [{}]", uri, throwable))
+            .retryWhen(errors ->
+                errors.flatMap(error -> {
+                    if (error instanceof UpgradeRejectedException upgradeRejectedException) {
+                        if (upgradeRejectedException.getStatus() == 401) {
+                            if (kubeConfig().getAccessToken() != null && !kubeConfig().getAccessToken().isBlank()) {
+                                log.debug("Refreshing Service Account authorization token...");
+                                webSocketConnectOptions.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + kubeConfig().getAccessToken());
+                                return Flowable.empty();
+                            }
+                        }
+                    }
+                    return Flowable.error(error);
+                })
+            )
             .publish()
             .refCount()
             .doOnTerminate(() -> log.debug("reconnecting due to websocket termination at [{}]", uri))
