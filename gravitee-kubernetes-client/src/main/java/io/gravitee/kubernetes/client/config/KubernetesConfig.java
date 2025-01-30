@@ -25,10 +25,16 @@ import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.Singular;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,6 +43,8 @@ import org.slf4j.LoggerFactory;
  * @author GraviteeSource Team
  * @since 3.9.11
  */
+@Setter
+@Getter
 public class KubernetesConfig {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KubernetesConfig.class);
@@ -53,15 +61,23 @@ public class KubernetesConfig {
     private String apiServerHost;
     private int apiServerPort;
     private String caCertData;
+
+    @Getter(AccessLevel.NONE)
     private boolean verifyHost = true;
+
+    @Getter(AccessLevel.NONE)
     private boolean useSSL = true;
+
     private String accessToken;
     private boolean accessTokenProjectionEnabled;
-    private long accessTokenLastReload;
+
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
+    private Instant accessTokenLastReload;
+
     private String currentNamespace;
     private long websocketTimeout = DEFAULT_WEBSOCKET_TIMEOUT;
     private int apiTimeout = DEFAULT_API_TIMEOUT;
-
     private String masterUrl;
     private String apiVersion = "v1";
     private String clientCertData;
@@ -73,26 +89,36 @@ public class KubernetesConfig {
     private static KubernetesConfig instance;
 
     private KubernetesConfig() {
-        if (!tryKubeConfig(null) && !tryServiceAccount()) {
-            LOGGER.error("Unable to configure Kubernetes Config. No KubeConfig or Service account is found");
-        }
-    }
-
-    private KubernetesConfig(String kubeConfigLocation) {
-        if (!tryKubeConfig(kubeConfigLocation) && !tryServiceAccount()) {
-            throw new IllegalArgumentException("Unable to configure Kubernetes Config. No KubeConfig or Service account is found");
-        }
+        // no op
     }
 
     public static synchronized KubernetesConfig getInstance() {
         if (instance == null) {
-            instance = new KubernetesConfig();
+            instance = newInstance().initWithDefaults();
         }
         return instance;
     }
 
+    public static KubernetesConfig newInstance() {
+        return new KubernetesConfig();
+    }
+
     public static KubernetesConfig newInstance(String kubeConfigLocation) {
-        return new KubernetesConfig(kubeConfigLocation);
+        return newInstance().initWithConfigFile(kubeConfigLocation);
+    }
+
+    private KubernetesConfig initWithDefaults() {
+        if (!(tryKubeConfig() || tryServiceAccount())) {
+            LOGGER.error("Unable to configure Kubernetes Config. No KubeConfig or Service account is found");
+        }
+        return this;
+    }
+
+    private KubernetesConfig initWithConfigFile(String kubeConfigLocation) {
+        if (!(tryKubeConfig(kubeConfigLocation) || !tryServiceAccount())) {
+            throw new IllegalArgumentException("Unable to configure Kubernetes Config. No KubeConfig or Service account is found");
+        }
+        return this;
     }
 
     boolean tryServiceAccount() {
@@ -150,17 +176,23 @@ public class KubernetesConfig {
     /**
      * Load the Kubernetes Service account from within the pod
      */
-    private boolean loadServiceAccountToken() {
-        String tokenFilePath = getSystemPropertyOrEnvVar(
-            KUBERNETES_SERVICE_ACCOUNT_TOKEN_PATH,
-            "/var/run/secrets/kubernetes.io/serviceaccount/token"
-        );
+    public boolean loadServiceAccountToken() {
+        return loadServiceAccountToken(null);
+    }
+
+    /**
+     * Load the Kubernetes Service account with token from a file
+     * @param tokenPath file containing token or null to use the default location
+     */
+    public boolean loadServiceAccountToken(String tokenPath) {
+        String fallbackTokenPath = tokenPath != null ? tokenPath : "/var/run/secrets/kubernetes.io/serviceaccount/token";
+        String tokenFilePath = getSystemPropertyOrEnvVar(KUBERNETES_SERVICE_ACCOUNT_TOKEN_PATH, fallbackTokenPath);
         try {
             boolean serviceAccountAccessTokenExists = Files.isRegularFile(new File(tokenFilePath).toPath());
             if (serviceAccountAccessTokenExists) {
                 LOGGER.debug("Found service account token at: [{}].", tokenFilePath);
-                this.setAccessToken(new String(Files.readAllBytes(new File(tokenFilePath).toPath())));
-                this.accessTokenLastReload = System.currentTimeMillis();
+                this.setAccessToken(Files.readString(Path.of(tokenFilePath)));
+                this.accessTokenLastReload = Instant.now();
                 return true;
             }
         } catch (IOException e) {
@@ -187,6 +219,10 @@ public class KubernetesConfig {
             // No service account token available...
             LOGGER.error("Unable to read the current namespace from file: [{}].", namespaceFilePath, e);
         }
+    }
+
+    public boolean tryKubeConfig() {
+        return tryKubeConfig(null);
     }
 
     public boolean tryKubeConfig(String kubeConfigLocation) {
@@ -427,59 +463,21 @@ public class KubernetesConfig {
         return s != null && !s.isBlank();
     }
 
-    // Property methods
-    public String getApiServerHost() {
-        return apiServerHost;
-    }
-
-    public void setApiServerHost(String apiServerHost) {
-        this.apiServerHost = apiServerHost;
-    }
-
-    public int getApiServerPort() {
-        return apiServerPort;
-    }
-
-    public void setApiServerPort(int apiServerPort) {
-        this.apiServerPort = apiServerPort;
-    }
-
-    public String getCaCertData() {
-        return caCertData;
-    }
-
-    public void setCaCertData(String caCertData) {
-        this.caCertData = caCertData;
-    }
-
     public boolean verifyHost() {
         return verifyHost;
-    }
-
-    public void setVerifyHost(boolean verifyHost) {
-        this.verifyHost = verifyHost;
     }
 
     public boolean useSSL() {
         return useSSL;
     }
 
-    public void setUseSSL(boolean useSSL) {
-        this.useSSL = useSSL;
-    }
-
     public String getAccessToken() {
-        if (isAccessTokenProjectionEnabled()) {
-            //reload only if at least 5 minutes have passed since the last reload
-            if (System.currentTimeMillis() - this.accessTokenLastReload > 300_000L) {
-                loadServiceAccountToken();
-            }
+        //reload only if at least 5 minutes have passed since the last reload
+        if (isAccessTokenProjectionEnabled() && Instant.now().isAfter(this.accessTokenLastReload.plus(5, ChronoUnit.MINUTES))) {
+            loadServiceAccountToken();
         }
-        return accessToken;
-    }
 
-    public void setAccessToken(String accessToken) {
-        this.accessToken = accessToken;
+        return accessToken;
     }
 
     /**
@@ -503,91 +501,11 @@ public class KubernetesConfig {
         return currentNamespace;
     }
 
-    public void setCurrentNamespace(String currentNamespace) {
-        this.currentNamespace = currentNamespace;
-    }
-
-    public long getWebsocketTimeout() {
-        return websocketTimeout;
-    }
-
-    public void setWebsocketTimeout(long websocketTimeout) {
-        this.websocketTimeout = websocketTimeout;
-    }
-
-    public int getApiTimeout() {
-        return apiTimeout;
-    }
-
-    public void setApiTimeout(int apiTimeout) {
-        this.apiTimeout = apiTimeout;
-    }
-
-    public String getMasterUrl() {
-        return masterUrl;
-    }
-
     public void setMasterUrl(String masterUrl) {
         if (hasValue(masterUrl)) {
             this.masterUrl = masterUrl;
             this.setApiServerHost(masterUrl.substring(8, masterUrl.lastIndexOf(":"))); // skip initial "https://"
             this.setApiServerPort(Integer.parseInt(masterUrl.substring(masterUrl.lastIndexOf(':') + 1)));
         }
-    }
-
-    public String getApiVersion() {
-        return apiVersion;
-    }
-
-    public void setApiVersion(String apiVersion) {
-        this.apiVersion = apiVersion;
-    }
-
-    public String getClientCertData() {
-        return clientCertData;
-    }
-
-    public void setClientCertData(String clientCertData) {
-        this.clientCertData = clientCertData;
-    }
-
-    public String getClientKeyData() {
-        return clientKeyData;
-    }
-
-    public void setClientKeyData(String clientKeyData) {
-        this.clientKeyData = clientKeyData;
-    }
-
-    public File getFile() {
-        return file;
-    }
-
-    public void setFile(File file) {
-        this.file = file;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public boolean isAccessTokenProjectionEnabled() {
-        return accessTokenProjectionEnabled;
-    }
-
-    public void setAccessTokenProjectionEnabled(boolean accessTokenProjectionEnabled) {
-        this.accessTokenProjectionEnabled = accessTokenProjectionEnabled;
     }
 }
