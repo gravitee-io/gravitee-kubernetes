@@ -15,8 +15,7 @@
  */
 package io.gravitee.kubernetes.client.config;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.*;
 
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
@@ -79,5 +78,13 @@ class KubernetesConfigTest {
         assertThat(instance.getCurrentNamespace()).isEqualTo("my-test-ns");
         instance.setCurrentNamespace("foo");
         assertThat(instance.getCurrentNamespace()).isEqualTo("foo");
+    }
+
+    @Test
+    void should_build_load_token_from_file() {
+        KubernetesConfig instance = KubernetesConfig.newInstance();
+        assertThat(instance.getAccessToken()).isNull();
+        instance.loadServiceAccountToken("src/test/resources/token");
+        assertThat(instance.getAccessToken()).isNotBlank();
     }
 }
