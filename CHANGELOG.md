@@ -1,3 +1,10 @@
+## [3.4.3](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.4.2...3.4.3) (2025-01-31)
+
+
+### Bug Fixes
+
+* handle service account token rotates ([984c5e8](https://github.com/gravitee-io/gravitee-kubernetes/commit/984c5e80fe7fc7816519df324dbc8d3efa0b3ca6))
+
 ## [3.4.2](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.4.1...3.4.2) (2025-01-16)
 
 
