@@ -1,3 +1,15 @@
+# [3.5.0](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.4.3...3.5.0) (2025-02-12)
+
+
+### Bug Fixes
+
+* **deps:** update dependency io.gravitee:gravitee-bom to v6.0.62 ([f641edf](https://github.com/gravitee-io/gravitee-kubernetes/commit/f641edfc5032ecec0689a7cf4d5c2a2bbe1f0241))
+
+
+### Features
+
+* allow override token location on pod ([9757850](https://github.com/gravitee-io/gravitee-kubernetes/commit/97578509296e8c3312e09bbaf01749c1fe55ec4f))
+
 ## [3.4.3](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.4.2...3.4.3) (2025-01-31)
 
 
