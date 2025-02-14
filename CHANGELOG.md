@@ -1,3 +1,10 @@
+## [3.5.1](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.5.0...3.5.1) (2025-02-14)
+
+
+### Bug Fixes
+
+* bad boolean check in init with file ([8df885b](https://github.com/gravitee-io/gravitee-kubernetes/commit/8df885bd991616996ee49ea396dfd63c0d727624))
+
 # [3.5.0](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.4.3...3.5.0) (2025-02-12)
 
 
