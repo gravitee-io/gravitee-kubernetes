@@ -115,7 +115,7 @@ public class KubernetesConfig {
     }
 
     private KubernetesConfig initWithConfigFile(String kubeConfigLocation) {
-        if (!(tryKubeConfig(kubeConfigLocation) || !tryServiceAccount())) {
+        if (!(tryKubeConfig(kubeConfigLocation) || tryServiceAccount())) {
             throw new IllegalArgumentException("Unable to configure Kubernetes Config. No KubeConfig or Service account is found");
         }
         return this;
