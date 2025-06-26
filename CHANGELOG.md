@@ -1,3 +1,10 @@
+## [3.5.2](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.5.1...3.5.2) (2025-06-26)
+
+
+### Bug Fixes
+
+* avoid missed event watching same secret multiple times ([dda2cdb](https://github.com/gravitee-io/gravitee-kubernetes/commit/dda2cdbf3381268b7da0537b044e678ad71de38b))
+
 ## [3.5.1](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.5.0...3.5.1) (2025-02-14)
 
 
