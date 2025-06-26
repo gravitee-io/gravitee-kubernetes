@@ -52,6 +52,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
     private Secret secret3;
 
     @Before
+    @Override
     public void before() {
         super.before();
         Map<String, String> secretData = new HashMap<>();
@@ -64,7 +65,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
     }
 
     @Test
-    public void shouldGetSecretList(TestContext tc) throws InterruptedException {
+    public void should_get_secret_list(TestContext tc) throws InterruptedException {
         server
             .expect()
             .get()
@@ -84,7 +85,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
     }
 
     @Test
-    public void shouldGetSecret1(TestContext tc) throws InterruptedException {
+    public void should_get_secret1(TestContext tc) throws InterruptedException {
         server
             .expect()
             .get()
@@ -107,7 +108,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
     }
 
     @Test
-    public void shouldRetrieveSingleKeyInSecret(TestContext tc) throws InterruptedException {
+    public void should_retrieve_single_key_in_secret(TestContext tc) throws InterruptedException {
         server
             .expect()
             .get()
@@ -128,7 +129,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
     }
 
     @Test
-    public void shouldRetrieveNothingOnError() throws InterruptedException {
+    public void should_retrieve_nothing_on_error() throws InterruptedException {
         server.expect().get().withPath("/api/v1/namespaces/test/secrets/secret1").andReturn(404, "not found").always();
 
         final TestObserver<io.gravitee.kubernetes.client.model.v1.Secret> obs = kubernetesClient
@@ -140,7 +141,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
     }
 
     @Test
-    public void shouldWatchAllSecrets() throws InterruptedException {
+    public void should_watch_all_secrets() throws InterruptedException {
         server
             .expect()
             .get()
@@ -195,7 +196,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
     }
 
     @Test
-    public void shouldRepeatOnDisconnect() throws InterruptedException {
+    public void should_repeat_on_disconnect() throws InterruptedException {
         var path = "/api/v1/namespaces/test/secrets?fieldSelector=metadata.name%3Dsecret1&watch=true";
 
         // accept watch and disconnect
@@ -227,7 +228,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
     }
 
     @Test
-    public void shouldWatchSpecifiedSecret_usingDsl() throws InterruptedException {
+    public void should_watch_specified_secret_using_dsl() throws InterruptedException {
         server
             .expect()
             .get()
@@ -251,7 +252,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
     }
 
     @Test
-    public void shouldWatchOnceOnSameSecret() throws InterruptedException {
+    public void should_watch_once_on_same_secret() throws InterruptedException {
         server
             .expect()
             .get()
@@ -279,7 +280,44 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
     }
 
     @Test
-    public void shouldWatchSecretWithLabelAndFieldSelectors() throws InterruptedException {
+    public void should_watch_once_on_same_secret_with_late_subscriber() throws InterruptedException {
+        // KubernetesMockServer does not allow for real sequencing triggering of events. All events are sent all in once when calling done() method.
+        // For this specific test, we use 2 server mocks to allow for the second subscriber to subscribe later and simulate event loss.
+        server
+            .expect()
+            .get()
+            .withPath("/api/v1/namespaces/test/secrets?fieldSelector=metadata.name%3Dsecret1&watch=true")
+            .andUpgradeToWebSocket()
+            .open(new WatchEvent(secret1, "ADDED"))
+            .done()
+            .once();
+
+        server
+            .expect()
+            .get()
+            .withPath("/api/v1/namespaces/test/secrets?fieldSelector=metadata.name%3Dsecret1&watch=true")
+            .andUpgradeToWebSocket()
+            .open()
+            .waitFor(EVENT_WAIT_PERIOD_MS)
+            .andEmit(new WatchEvent(incrementResourceVersion(secret1), "MODIFIED"))
+            .done()
+            .once();
+
+        var watch1 = kubernetesClient.watch(
+            WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build()
+        );
+        var watch2 = kubernetesClient.watch(
+            WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build()
+        );
+
+        var obs = Flowable.merge(List.of(watch1, watch2.delaySubscription(500, TimeUnit.MILLISECONDS))).test();
+        obs.await();
+        obs.assertValueCount(4);
+        obs.assertNotComplete();
+    }
+
+    @Test
+    public void should_watch_secret_with_label_and_field_selectors() throws InterruptedException {
         server
             .expect()
             .get()
@@ -315,7 +353,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
     }
 
     @Test
-    public void shouldCancelWatchOnSameSecret() throws InterruptedException {
+    public void should_cancel_watch_on_same_secret() throws InterruptedException {
         server
             .expect()
             .get()
@@ -350,7 +388,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
     }
 
     @Test
-    public void shouldWatchOnDifferentSecrets() throws InterruptedException {
+    public void should_watch_on_different_secrets() throws InterruptedException {
         server
             .expect()
             .get()
@@ -389,7 +427,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
     }
 
     @Test
-    public void shouldCompleteWatchSecretsAfterError() throws InterruptedException {
+    public void should_complete_watch_secrets_after_error() throws InterruptedException {
         server
             .expect()
             .get()
@@ -415,7 +453,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
     }
 
     @Test
-    public void shouldRetryWatchOnEventError() throws InterruptedException {
+    public void should_retry_watch_on_event_error() throws InterruptedException {
         // Mock first connection.
         server
             .expect()
@@ -456,12 +494,9 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
     }
 
     @Test
-    public void shouldRetryWatchOnConnectionError() throws InterruptedException {
+    public void should_retry_watch_on_connection_error() throws InterruptedException {
         // Shutdown the server to force reconnection.
         server.shutdown();
-
-        Flowable<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> watch =
-            kubernetesClient.watch(WatchQuery.secret("test", "secret1").build());
 
         final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs =
             kubernetesClient
@@ -483,7 +518,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
     }
 
     @Test
-    public void shouldCreateSecret(TestContext tc) throws InterruptedException {
+    public void should_create_secret(TestContext tc) throws InterruptedException {
         io.gravitee.kubernetes.client.model.v1.Secret secret = new io.gravitee.kubernetes.client.model.v1.Secret();
 
         io.gravitee.kubernetes.client.model.v1.ObjectMeta metadata = new io.gravitee.kubernetes.client.model.v1.ObjectMeta();
