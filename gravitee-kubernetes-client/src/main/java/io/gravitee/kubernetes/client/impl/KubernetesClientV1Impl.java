@@ -57,6 +57,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
     private static final long PING_HANDLER_DELAY = 5000L;
     public static final long DISCONNECT_REPEAT_AFTER_MILLIS = 1000L;
     private static final Vertx VERTX;
+    public static final int LATE_SUBSCRIBER_REPLAY_DELAY_SECONDS = 5;
 
     static {
         // Maintain only one dedicated instance of vertx.
@@ -243,10 +244,11 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                     return Flowable.error(error);
                 })
             )
-            .publish()
-            .refCount()
             .doOnTerminate(() -> log.debug("reconnecting due to websocket termination at [{}]", uri))
-            .repeatWhen(p -> p.delay(DISCONNECT_REPEAT_AFTER_MILLIS, TimeUnit.MILLISECONDS));
+            .repeatWhen(p -> p.delay(DISCONNECT_REPEAT_AFTER_MILLIS, TimeUnit.MILLISECONDS))
+            // Watch events are shared across subscribers (e.g., only one websocket watching for the same uri), we need to replay items for late subscribers.
+            .replay(LATE_SUBSCRIBER_REPLAY_DELAY_SECONDS, TimeUnit.SECONDS)
+            .refCount();
 
         watch.setEvents(events);
 
