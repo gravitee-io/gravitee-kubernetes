@@ -71,9 +71,8 @@ public class WatchQuery<E extends Event<? extends Watchable>> extends AbstractQu
     public static WatchQueryBuilder<Secret, Event<Secret>> secret(String namespace, String secretName) {
         Objects.requireNonNull(namespace, NAMESPACE_CAN_NOT_BE_NULL);
         Objects.requireNonNull(secretName, "Secret can not be null");
-        return new WatchQueryBuilder<Secret, Event<Secret>>(Type.SECRETS)
-            .namespace(namespace)
-            .fieldSelector(FieldSelector.equals("metadata.name", secretName));
+
+        return secrets(namespace).resource(secretName);
     }
 
     public static <T extends Watchable> WatchQueryBuilder<T, Event<T>> from(String location) {
@@ -81,11 +80,15 @@ public class WatchQuery<E extends Event<? extends Watchable>> extends AbstractQu
 
         if (reference.resource == null) {
             return new WatchQueryBuilder<T, Event<T>>(reference.type).namespace(reference.namespace);
-        } else {
-            return new WatchQueryBuilder<T, Event<T>>(reference.type)
-                .namespace(reference.namespace)
-                .fieldSelector(FieldSelector.equals("metadata.name", reference.resource));
         }
+
+        return new WatchQueryBuilder<T, Event<T>>(reference.type).namespace(reference.namespace).resource(reference.resource);
+    }
+
+    @Override
+    protected String uriResource() {
+        // k8s does not allow for watching a specific resource in uri (need to use field selector metadata.name).
+        return "";
     }
 
     @Override
@@ -133,6 +136,9 @@ public class WatchQuery<E extends Event<? extends Watchable>> extends AbstractQu
         @Override
         public WatchQueryBuilder<T, E> resource(String resource) {
             super.resource(resource);
+            if (resource != null && !resource.contains("*")) {
+                fieldSelector(FieldSelector.equals("metadata.name", resource));
+            }
             return this;
         }
 

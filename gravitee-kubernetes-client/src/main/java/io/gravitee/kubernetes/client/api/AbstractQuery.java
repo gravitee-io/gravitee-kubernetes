@@ -25,7 +25,7 @@ import org.springframework.util.StringUtils;
  * @author David BRASSELY (david.brassely at graviteesource.com)
  * @author GraviteeSource Team
  */
-class AbstractQuery<T> {
+abstract class AbstractQuery<T> {
 
     private static final String API_VERSION = "/api/v1";
 
@@ -72,7 +72,9 @@ class AbstractQuery<T> {
         }
     }
 
-    private boolean singleResource() {
+    protected abstract String uriResource();
+
+    protected boolean singleResource() {
         return resource != null && !resource.isEmpty();
     }
 
@@ -86,9 +88,8 @@ class AbstractQuery<T> {
 
         builder.append('/').append(type.value());
 
-        if (singleResource()) {
-            builder.append('/').append(resource);
-        }
+        // Append resource to uri if applicable.
+        builder.append(uriResource());
 
         // Build parameters
         List<String> parameters = buildParameters();

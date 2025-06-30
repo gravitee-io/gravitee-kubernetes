@@ -39,6 +39,11 @@ public class ResourceQuery<T> extends AbstractQuery<T> {
         super(namespace, type, resource, resourceKey, resourceVersion, fieldSelectors, labelSelectors);
     }
 
+    @Override
+    protected String uriResource() {
+        return singleResource() ? "/" + resource : "";
+    }
+
     public static QueryBuilder<ConfigMapList> configMaps() {
         return new QueryBuilder<>(Type.CONFIGMAPS);
     }
