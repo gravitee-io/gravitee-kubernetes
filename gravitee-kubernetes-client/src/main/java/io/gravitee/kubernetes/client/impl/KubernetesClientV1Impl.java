@@ -44,6 +44,7 @@ import java.security.KeyStore;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -69,6 +70,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
     private final KubernetesConfig config;
     private HttpClient httpClient;
     private final Map<String, Watch> watchMap = new ConcurrentHashMap<>();
+    private final Map<String, Pattern> patternCache = new ConcurrentHashMap<>();
 
     private static final char WATCH_KEY_SEPARATOR = '#';
 
@@ -185,6 +187,16 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                 return w;
             }
         );
+
+        final String wildcardResource = query.getResource() != null && query.getResource().contains("*") ? query.getResource() : null;
+
+        if (wildcardResource != null) {
+            return watch.events.filter(e -> {
+                final String regex = "\\Q" + wildcardResource.replace("*", "\\E.*\\Q") + "\\E";
+                final Pattern pattern = patternCache.computeIfAbsent(regex, k -> Pattern.compile(regex));
+                return pattern.matcher(e.getObject().metaData().getName()).find();
+            });
+        }
 
         return watch.events;
     }

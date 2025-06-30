@@ -48,6 +48,7 @@ import org.reactivestreams.Subscription;
 public class KubernetesSecretV1Test extends KubernetesUnitTest {
 
     private Secret secret1;
+    private Secret secret11;
     private Secret secret2;
     private Secret secret3;
 
@@ -60,6 +61,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
         secretData.put("tls.pem", "dHNsLnBlbQ==");
 
         secret1 = buildSecret("test", UUID.randomUUID().toString(), "secret1", secretData);
+        secret11 = buildSecret("test", UUID.randomUUID().toString(), "secret11", secretData);
         secret2 = buildSecret("test", UUID.randomUUID().toString(), "secret2", secretData);
         secret3 = buildSecret("test", UUID.randomUUID().toString(), "secret3", secretData);
     }
@@ -162,8 +164,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
         final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs =
             kubernetesClient.watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets").build()).test();
 
-        obs.await();
-        obs.assertValueCount(4);
+        obs.awaitCount(4);
         obs.assertValueAt(0, secretEvent -> secretEvent.getType().equalsIgnoreCase("ADDED"));
         obs.assertValueAt(1, secretEvent -> secretEvent.getType().equalsIgnoreCase("DELETED"));
         obs.assertValueAt(2, secretEvent -> secretEvent.getType().equalsIgnoreCase("ADDED"));
@@ -172,7 +173,54 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
     }
 
     @Test
-    public void shouldWatchSpecifiedSecret() throws InterruptedException {
+    public void should_watch_wildcard_secret() {
+        server
+            .expect()
+            .get()
+            .withPath("/api/v1/namespaces/test/secrets?watch=true")
+            .andUpgradeToWebSocket()
+            .open()
+            .waitFor(EVENT_WAIT_PERIOD_MS)
+            .andEmit(new WatchEvent(secret1, "ADDED"))
+            .waitFor(EVENT_WAIT_PERIOD_MS)
+            .andEmit(new WatchEvent(secret2, "ADDED"))
+            .waitFor(EVENT_WAIT_PERIOD_MS)
+            .andEmit(new WatchEvent(secret3, "ADDED"))
+            .waitFor(EVENT_WAIT_PERIOD_MS)
+            .andEmit(new WatchEvent(secret11, "ADDED"))
+            .waitFor(EVENT_WAIT_PERIOD_MS)
+            .andEmit(new WatchEvent(incrementResourceVersion(secret1), "MODIFIED"))
+            .done()
+            .once();
+
+        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs =
+            kubernetesClient.watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1*").build()).test();
+
+        obs.awaitCount(3);
+        // Expecting only secrets matching 'secret1*'
+        obs.assertValueAt(
+            0,
+            secretEvent ->
+                secretEvent.getObject().getMetadata().getName().equals(secret1.getMetadata().getName()) &&
+                secretEvent.getType().equalsIgnoreCase("ADDED")
+        );
+        obs.assertValueAt(
+            1,
+            secretEvent ->
+                secretEvent.getObject().getMetadata().getName().equals(secret11.getMetadata().getName()) &&
+                secretEvent.getType().equalsIgnoreCase("ADDED")
+        );
+        obs.assertValueAt(
+            2,
+            secretEvent ->
+                secretEvent.getObject().getMetadata().getName().equals(secret1.getMetadata().getName()) &&
+                secretEvent.getType().equalsIgnoreCase("MODIFIED")
+        );
+        obs.assertNotComplete();
+    }
+
+    @Test
+    public void should_watch_specified_secret() throws InterruptedException {
         server
             .expect()
             .get()
