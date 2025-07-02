@@ -1,3 +1,10 @@
+# [3.6.0](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.5.2...3.6.0) (2025-07-02)
+
+
+### Features
+
+* support watch with wildcard ([5eb7ef0](https://github.com/gravitee-io/gravitee-kubernetes/commit/5eb7ef04bd8981ad4dde99647fc0e229e693c905))
+
 ## [3.5.2](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.5.1...3.5.2) (2025-06-26)
 
 
