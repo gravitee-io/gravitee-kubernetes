@@ -228,14 +228,17 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                                 return e;
                             })
                             .filter(e -> {
-                                ObjectMeta metaData = e.getObject().metaData();
+                                ObjectMeta md = e.getObject().metaData();
+                                String key = String.format("%s/%s", md.getNamespace(), md.getName());
+
                                 if (
-                                    !watch.resourceVersionCache.containsKey(metaData.getName()) ||
-                                    !watch.resourceVersionCache.get(metaData.getName()).equals(metaData.getResourceVersion())
+                                    !watch.resourceVersionCache.containsKey(key) ||
+                                    Long.parseLong(watch.resourceVersionCache.get(key)) < Long.parseLong(md.getResourceVersion())
                                 ) {
-                                    watch.resourceVersionCache.put(metaData.getName(), metaData.getResourceVersion());
+                                    watch.resourceVersionCache.put(key, md.getResourceVersion());
                                     return true;
                                 }
+
                                 return false;
                             })
                     )
@@ -244,14 +247,15 @@ public class KubernetesClientV1Impl implements KubernetesClient {
             .doOnError(throwable -> log.debug("An error occurred watching from [{}]", uri, throwable))
             .retryWhen(errors ->
                 errors.flatMap(error -> {
-                    if (error instanceof UpgradeRejectedException upgradeRejectedException) {
-                        if (upgradeRejectedException.getStatus() == 401) {
-                            if (kubeConfig().getAccessToken() != null && !kubeConfig().getAccessToken().isBlank()) {
-                                log.debug("Refreshing Service Account authorization token...");
-                                webSocketConnectOptions.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + kubeConfig().getAccessToken());
-                                return Flowable.empty();
-                            }
-                        }
+                    if (
+                        error instanceof UpgradeRejectedException upgradeRejectedException &&
+                        upgradeRejectedException.getStatus() == 401 &&
+                        kubeConfig().getAccessToken() != null &&
+                        !kubeConfig().getAccessToken().isBlank()
+                    ) {
+                        log.debug("Refreshing Service Account authorization token...");
+                        webSocketConnectOptions.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + kubeConfig().getAccessToken());
+                        return Flowable.empty();
                     }
                     return Flowable.error(error);
                 })
@@ -369,16 +373,8 @@ public class KubernetesClientV1Impl implements KubernetesClient {
             this.resourceVersionCache = new ConcurrentHashMap<>();
         }
 
-        public Flowable<E> getEvents() {
-            return events;
-        }
-
         public void setEvents(Flowable<E> events) {
             this.events = events;
-        }
-
-        public String getKey() {
-            return key;
         }
     }
 }
