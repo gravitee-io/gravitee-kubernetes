@@ -1,3 +1,10 @@
+## [3.6.1](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.6.0...3.6.1) (2025-09-01)
+
+
+### Bug Fixes
+
+* avoid resolving same resource on cache clearing ([4200750](https://github.com/gravitee-io/gravitee-kubernetes/commit/42007507d4a38215d1777a0ff955bf5edf1c97f7))
+
 # [3.6.0](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.5.2...3.6.0) (2025-07-02)
 
 
