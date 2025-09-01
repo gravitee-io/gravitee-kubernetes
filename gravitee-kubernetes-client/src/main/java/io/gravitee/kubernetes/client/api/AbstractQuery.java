@@ -43,7 +43,10 @@ abstract class AbstractQuery<T> {
     @Getter
     protected final String resourceVersion;
 
+    @Getter
     protected final List<FieldSelector> fieldSelectors;
+
+    @Getter
     protected final List<LabelSelector> labelSelectors;
 
     protected AbstractQuery(
