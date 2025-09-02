@@ -44,6 +44,15 @@ public class WatchQuery<E extends Event<? extends Watchable>> extends AbstractQu
         this.allowWatchBookmarks = allowWatchBookmarks;
     }
 
+    public static WatchQueryBuilder<Endpoints, Event<Endpoints>> endpoints() {
+        return new WatchQueryBuilder<>(Type.ENDPOINTS);
+    }
+
+    public static WatchQueryBuilder<Endpoints, Event<Endpoints>> endpoints(String namespace) {
+        Objects.requireNonNull(namespace, NAMESPACE_CAN_NOT_BE_NULL);
+        return new WatchQueryBuilder<Endpoints, Event<Endpoints>>(Type.ENDPOINTS).namespace(namespace);
+    }
+
     public static WatchQueryBuilder<ConfigMap, Event<ConfigMap>> configMaps() {
         return new WatchQueryBuilder<>(Type.CONFIGMAPS);
     }

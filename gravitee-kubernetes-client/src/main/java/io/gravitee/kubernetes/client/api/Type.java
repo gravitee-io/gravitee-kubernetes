@@ -22,6 +22,7 @@ import io.gravitee.kubernetes.client.model.v1.*;
  * @author GraviteeSource Team
  */
 public enum Type {
+    ENDPOINTS("endpoints", Endpoints.class, EndpointsList.class, EndpointsEvent.class),
     SECRETS("secrets", Secret.class, SecretList.class, SecretEvent.class),
     CONFIGMAPS("configmaps", ConfigMap.class, ConfigMapList.class, ConfigMapEvent.class);
 

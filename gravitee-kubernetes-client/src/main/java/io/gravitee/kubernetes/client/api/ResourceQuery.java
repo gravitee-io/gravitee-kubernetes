@@ -44,6 +44,21 @@ public class ResourceQuery<T> extends AbstractQuery<T> {
         return singleResource() ? "/" + resource : "";
     }
 
+    public static QueryBuilder<EndpointsList> endpoints() {
+        return new QueryBuilder<>(Type.ENDPOINTS);
+    }
+
+    public static QueryBuilder<EndpointsList> endpoints(String namespace) {
+        Objects.requireNonNull(namespace, NAMESPACE_CAN_NOT_BE_NULL);
+        return new QueryBuilder<EndpointsList>(Type.ENDPOINTS).namespace(namespace);
+    }
+
+    public static QueryBuilder<EndpointsList> endpoints(String namespace, String endpointsName) {
+        Objects.requireNonNull(namespace, NAMESPACE_CAN_NOT_BE_NULL);
+        Objects.requireNonNull(endpointsName, "Endpoints name can not be null");
+        return new QueryBuilder<EndpointsList>(Type.ENDPOINTS).namespace(namespace).resource(endpointsName);
+    }
+
     public static QueryBuilder<ConfigMapList> configMaps() {
         return new QueryBuilder<>(Type.CONFIGMAPS);
     }
