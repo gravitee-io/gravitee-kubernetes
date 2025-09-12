@@ -1,3 +1,10 @@
+# [3.7.0](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.6.1...3.7.0) (2025-09-12)
+
+
+### Features
+
+* add support for k8s endpoints ([5e8d6d9](https://github.com/gravitee-io/gravitee-kubernetes/commit/5e8d6d977a4d3097d30810295ccd89584fe120ad))
+
 ## [3.6.1](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.6.0...3.6.1) (2025-09-01)
 
 
