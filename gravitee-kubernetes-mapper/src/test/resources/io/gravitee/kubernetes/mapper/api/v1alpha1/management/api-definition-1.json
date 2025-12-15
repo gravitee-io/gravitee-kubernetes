@@ -14,7 +14,10 @@
                 "target": "https://api.gravitee.io/echo",
                 "weight": 1,
                 "backup": false,
-                "healthcheck": true
+                "healthcheck": true,
+                "proxy": null,
+                "http": null,
+                "ssl": null
             }
         ],
         "load_balancing": {
