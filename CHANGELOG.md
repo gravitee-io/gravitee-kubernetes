@@ -1,3 +1,10 @@
+## [3.7.1](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.7.0...3.7.1) (2025-12-19)
+
+
+### Bug Fixes
+
+* remove null values from CRD yaml file ([51b2f02](https://github.com/gravitee-io/gravitee-kubernetes/commit/51b2f020a4326e0cbf332f964bb00503a75b4843))
+
 # [3.7.0](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.6.1...3.7.0) (2025-09-12)
 
 
