@@ -351,8 +351,12 @@ public class KubernetesConfig {
             if (clusterName != null) {
                 List<NamedCluster> clusters = config.getClusters();
                 if (clusters != null) {
-                    cluster =
-                        clusters.stream().filter(c -> c.getName().equals(clusterName)).findAny().map(NamedCluster::getCluster).orElse(null);
+                    cluster = clusters
+                        .stream()
+                        .filter(c -> c.getName().equals(clusterName))
+                        .findAny()
+                        .map(NamedCluster::getCluster)
+                        .orElse(null);
                 }
             }
         }
@@ -366,7 +370,12 @@ public class KubernetesConfig {
             if (user != null) {
                 List<NamedAuthInfo> users = config.getUsers();
                 if (users != null) {
-                    authInfo = users.stream().filter(u -> u.getName().equals(user)).findAny().map(NamedAuthInfo::getUser).orElse(null);
+                    authInfo = users
+                        .stream()
+                        .filter(u -> u.getName().equals(user))
+                        .findAny()
+                        .map(NamedAuthInfo::getUser)
+                        .orElse(null);
                 }
             }
         }
@@ -440,9 +449,10 @@ public class KubernetesConfig {
             throw new IllegalArgumentException(String.format("Override Kubernetes config file '%s' does not exist", overrideFile));
         }
 
-        String fileName = System
-            .getenv()
-            .getOrDefault(KUBERNETES_KUBECONFIG_FILE, new File(getHomeDir(), ".kube" + File.separator + "config").toString());
+        String fileName = System.getenv().getOrDefault(
+            KUBERNETES_KUBECONFIG_FILE,
+            new File(getHomeDir(), ".kube" + File.separator + "config").toString()
+        );
 
         // if system property/env var contains multiple files take the first one based on the environment
         // we are running in (eg. : for Linux, ; for Windows)

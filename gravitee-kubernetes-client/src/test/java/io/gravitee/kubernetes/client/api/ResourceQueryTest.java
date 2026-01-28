@@ -53,8 +53,7 @@ class ResourceQueryTest {
 
     @Test
     void should_get_secrets_from_namespace_field_selector() {
-        ResourceQuery<SecretList> query = ResourceQuery
-            .secrets("my-namespace")
+        ResourceQuery<SecretList> query = ResourceQuery.secrets("my-namespace")
             .fieldSelector(FieldSelector.equals("status.hostIP", "172.17.8.101"))
             .build();
 
@@ -63,8 +62,7 @@ class ResourceQueryTest {
 
     @Test
     void should_get_secrets_from_namespace_field_selector_using_from() {
-        ResourceQuery<SecretList> query = ResourceQuery
-            .<SecretList>from("/my-namespace/secrets")
+        ResourceQuery<SecretList> query = ResourceQuery.<SecretList>from("/my-namespace/secrets")
             .fieldSelector(FieldSelector.equals("status.hostIP", "172.17.8.101"))
             .build();
 

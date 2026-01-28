@@ -40,5 +40,6 @@ public class Error {
         private String message;
         private String reason;
         private int code;
+        private Object subsets;
     }
 }
