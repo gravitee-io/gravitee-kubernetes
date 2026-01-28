@@ -32,13 +32,21 @@ import io.reactivex.rxjava3.core.FlowableTransformer;
 import io.reactivex.rxjava3.core.Maybe;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.*;
+import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpHeaders;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.RequestOptions;
+import io.vertx.core.http.UpgradeRejectedException;
+import io.vertx.core.http.WebSocketClientOptions;
+import io.vertx.core.http.WebSocketConnectOptions;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.ClientOptionsBase;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.PemTrustOptions;
 import io.vertx.rxjava3.core.Vertx;
 import io.vertx.rxjava3.core.http.HttpClient;
 import io.vertx.rxjava3.core.http.HttpClientRequest;
+import io.vertx.rxjava3.core.http.WebSocketClient;
 import java.io.ByteArrayOutputStream;
 import java.security.KeyStore;
 import java.util.Map;
@@ -69,6 +77,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
 
     private final KubernetesConfig config;
     private HttpClient httpClient;
+    private WebSocketClient webSocketClient;
     private final Map<String, Watch> watchMap = new ConcurrentHashMap<>();
     private final Map<String, Pattern> patternCache = new ConcurrentHashMap<>();
 
@@ -100,7 +109,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
             byte[] body = objectMapper.writeValueAsBytes(item);
             return httpClient()
                 .rxRequest(requestOptions)
-                .flatMap(httpClientRequest -> httpClientRequest.rxSend(io.vertx.rxjava3.core.buffer.Buffer.buffer(body)))
+                .flatMap(httpClientRequest -> httpClientRequest.rxSend(io.vertx.core.buffer.Buffer.buffer(body)))
                 .toMaybe()
                 .flatMap(response -> {
                     if (
@@ -179,14 +188,11 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         String uri = query.toUri();
         String watchKey = "watch" + WATCH_KEY_SEPARATOR + uri.hashCode();
 
-        final Watch<E> watch = watchMap.computeIfAbsent(
-            watchKey,
-            s -> {
-                final Watch<E> w = watchEvents(watchKey, uri, query);
-                w.setEvents(w.events.doFinally(() -> watchMap.remove(watchKey)));
-                return w;
-            }
-        );
+        final Watch<E> watch = watchMap.computeIfAbsent(watchKey, s -> {
+            final Watch<E> w = watchEvents(watchKey, uri, query);
+            w.setEvents(w.events.doFinally(() -> watchMap.remove(watchKey)));
+            return w;
+        });
 
         final String wildcardResource = query.getResource() != null && query.getResource().contains("*") ? query.getResource() : null;
 
@@ -207,8 +213,8 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         final Watch<E> watch = new Watch<>(watchKey);
         final WebSocketConnectOptions webSocketConnectOptions = buildWebSocketConnectOptions(uri);
 
-        final Flowable<E> events = httpClient()
-            .rxWebSocket(webSocketConnectOptions)
+        final Flowable<E> events = webSocketClient()
+            .rxConnect(webSocketConnectOptions)
             .flatMapPublisher(websocket -> {
                 Flowable<E> pingFlowable = websocketPing(websocket);
                 return pingFlowable.compose(
@@ -272,16 +278,19 @@ public class KubernetesClientV1Impl implements KubernetesClient {
     }
 
     private <E> Flowable<E> websocketPing(io.vertx.rxjava3.core.http.WebSocket webSocket) {
-        return Flowable
-            .interval(PING_HANDLER_DELAY, TimeUnit.MILLISECONDS)
+        return Flowable.interval(PING_HANDLER_DELAY, TimeUnit.MILLISECONDS)
             .timestamp()
-            .flatMapCompletable(timed -> webSocket.rxWritePing(io.vertx.rxjava3.core.buffer.Buffer.buffer("ping")))
+            .flatMapCompletable(timed -> webSocket.rxWritePing(io.vertx.core.buffer.Buffer.buffer("ping")))
             .doOnError(throwable -> log.error("An error occurred while sending ping to websocket", throwable))
             .toFlowable();
     }
 
     private <E> FlowableTransformer<E, E> mergeWithFirst(Flowable<E> other) {
-        return upstream -> other.materialize().mergeWith(upstream.materialize()).dematerialize(n -> n);
+        return upstream ->
+            other
+                .materialize()
+                .mergeWith(upstream.materialize())
+                .dematerialize(n -> n);
     }
 
     private RequestOptions getHTTPRequestOptions(HttpMethod post, String uri) {
@@ -313,16 +322,30 @@ public class KubernetesClientV1Impl implements KubernetesClient {
     }
 
     private HttpClientOptions httpClientOptions() {
-        PemTrustOptions trustOptions = new PemTrustOptions();
+        HttpClientOptions options = configureClientOptions(new HttpClientOptions());
+        return options
+            .setVerifyHost(kubeConfig().verifyHost())
+            .setDefaultHost(kubeConfig().getApiServerHost())
+            .setDefaultPort(kubeConfig().getApiServerPort());
+    }
+
+    private WebSocketClientOptions webSocketClientOptions() {
+        WebSocketClientOptions options = configureClientOptions(new WebSocketClientOptions());
+        return options
+            .setVerifyHost(kubeConfig().verifyHost())
+            .setDefaultHost(kubeConfig().getApiServerHost())
+            .setDefaultPort(kubeConfig().getApiServerPort());
+    }
+
+    private <T extends ClientOptionsBase> T configureClientOptions(T options) {
         if (kubeConfig().getCaCertData() == null || kubeConfig().getApiServerHost() == null || kubeConfig().getApiServerPort() == 0) {
             log.error("KubeConfig is not configured properly. If you are running locally make sure you already configured your kubeconfig");
         }
 
+        PemTrustOptions trustOptions = new PemTrustOptions();
         if (kubeConfig().getCaCertData() != null) {
             trustOptions.addCertValue(Buffer.buffer(kubeConfig().getCaCertData()));
         }
-
-        HttpClientOptions opt = new HttpClientOptions();
 
         if (kubeConfig().getClientCertData() != null && kubeConfig().getClientKeyData() != null) {
             // setup mTLS (create a keystore and export and set again as buffer for vertx)
@@ -336,7 +359,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                     alias
                 );
                 keyStore.store(output, password.toCharArray());
-                opt.setKeyStoreOptions(
+                options.setKeyCertOptions(
                     new JksOptions().setPassword(password).setAlias(alias).setValue(Buffer.buffer(output.toByteArray()))
                 );
             } catch (Exception e) {
@@ -344,14 +367,13 @@ public class KubernetesClientV1Impl implements KubernetesClient {
             }
         }
 
-        return opt
+        options
             .setTrustOptions(trustOptions)
-            .setVerifyHost(kubeConfig().verifyHost())
             .setTrustAll(!kubeConfig().verifyHost())
-            .setDefaultHost(kubeConfig().getApiServerHost())
-            .setDefaultPort(kubeConfig().getApiServerPort())
             .setConnectTimeout(kubeConfig().getApiTimeout())
             .setSsl(kubeConfig().useSSL());
+
+        return options;
     }
 
     public synchronized HttpClient httpClient() {
@@ -360,6 +382,14 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         }
 
         return httpClient;
+    }
+
+    public synchronized io.vertx.rxjava3.core.http.WebSocketClient webSocketClient() {
+        if (webSocketClient == null) {
+            this.webSocketClient = VERTX.createWebSocketClient(webSocketClientOptions());
+        }
+
+        return webSocketClient;
     }
 
     private static class Watch<E extends Event<? extends Watchable>> {
