@@ -17,11 +17,11 @@ package io.gravitee.kubernetes.client;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.WatchEvent;
+import io.fabric8.kubernetes.api.model.discovery.EndpointPortBuilder;
 import io.fabric8.kubernetes.api.model.discovery.EndpointSlice;
 import io.fabric8.kubernetes.api.model.discovery.EndpointSliceBuilder;
 import io.fabric8.kubernetes.api.model.discovery.EndpointSliceList;
 import io.fabric8.kubernetes.api.model.discovery.EndpointSliceListBuilder;
-import io.fabric8.kubernetes.api.model.discovery.EndpointPortBuilder;
 import io.gravitee.kubernetes.client.api.FieldSelector;
 import io.gravitee.kubernetes.client.api.LabelSelector;
 import io.gravitee.kubernetes.client.api.ResourceQuery;
