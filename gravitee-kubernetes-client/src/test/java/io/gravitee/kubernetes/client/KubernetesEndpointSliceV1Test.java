@@ -18,10 +18,10 @@ package io.gravitee.kubernetes.client;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.WatchEvent;
 import io.fabric8.kubernetes.api.model.discovery.EndpointSlice;
+import io.fabric8.kubernetes.api.model.discovery.EndpointSliceBuilder;
 import io.fabric8.kubernetes.api.model.discovery.EndpointSliceList;
 import io.fabric8.kubernetes.api.model.discovery.EndpointSliceListBuilder;
 import io.fabric8.kubernetes.api.model.discovery.EndpointSlicePortBuilder;
-import io.fabric8.kubernetes.api.model.discovery.EndpointSliceBuilder;
 import io.gravitee.kubernetes.client.api.FieldSelector;
 import io.gravitee.kubernetes.client.api.LabelSelector;
 import io.gravitee.kubernetes.client.api.ResourceQuery;
@@ -74,10 +74,10 @@ public class KubernetesEndpointSliceV1Test extends KubernetesUnitTest {
             .done()
             .once();
 
-        final TestSubscriber<
-            io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.EndpointSlice>
-        > obs =
-            kubernetesClient.watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.EndpointSlice>from("/test/endpointslices").build()).test();
+        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.EndpointSlice>> obs =
+            kubernetesClient
+                .watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.EndpointSlice>from("/test/endpointslices").build())
+                .test();
 
         obs.await();
         obs.assertValueCount(2);
@@ -103,9 +103,7 @@ public class KubernetesEndpointSliceV1Test extends KubernetesUnitTest {
             .done()
             .once();
 
-        final Flowable<
-            io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.EndpointSlice>
-        > watch =
+        final Flowable<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.EndpointSlice>> watch =
             kubernetesClient.watch(
                 WatchQuery
                     .<io.gravitee.kubernetes.client.model.v1.EndpointSlice>from("/test/endpointslices")
@@ -116,9 +114,8 @@ public class KubernetesEndpointSliceV1Test extends KubernetesUnitTest {
                     .build()
             );
 
-        final TestSubscriber<
-            io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.EndpointSlice>
-        > obs = watch.test();
+        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.EndpointSlice>> obs =
+            watch.test();
 
         obs.await();
         obs.assertValueCount(1);

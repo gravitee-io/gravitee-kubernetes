@@ -27,7 +27,6 @@ import org.springframework.util.StringUtils;
  */
 abstract class AbstractQuery<T> {
 
-
     protected final Type type;
 
     @Getter
