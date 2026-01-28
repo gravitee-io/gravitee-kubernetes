@@ -59,6 +59,21 @@ public class ResourceQuery<T> extends AbstractQuery<T> {
         return new QueryBuilder<EndpointsList>(Type.ENDPOINTS).namespace(namespace).resource(endpointsName);
     }
 
+    public static QueryBuilder<EndpointSliceList> endpointSlices() {
+        return new QueryBuilder<>(Type.ENDPOINTSLICES);
+    }
+
+    public static QueryBuilder<EndpointSliceList> endpointSlices(String namespace) {
+        Objects.requireNonNull(namespace, NAMESPACE_CAN_NOT_BE_NULL);
+        return new QueryBuilder<EndpointSliceList>(Type.ENDPOINTSLICES).namespace(namespace);
+    }
+
+    public static QueryBuilder<EndpointSliceList> endpointSlices(String namespace, String endpointSliceName) {
+        Objects.requireNonNull(namespace, NAMESPACE_CAN_NOT_BE_NULL);
+        Objects.requireNonNull(endpointSliceName, "EndpointSlice name can not be null");
+        return new QueryBuilder<EndpointSliceList>(Type.ENDPOINTSLICES).namespace(namespace).resource(endpointSliceName);
+    }
+
     public static QueryBuilder<ConfigMapList> configMaps() {
         return new QueryBuilder<>(Type.CONFIGMAPS);
     }
