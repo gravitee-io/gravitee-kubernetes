@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.gravitee</groupId>
         <artifactId>gravitee-parent</artifactId>
-        <version>22.5.1</version>
+        <version>23.5.0</version>
     </parent>
 
     <groupId>io.gravitee.kubernetes</groupId>
@@ -38,9 +38,9 @@
     </modules>
 
     <properties>
-        <gravitee-bom.version>6.0.62</gravitee-bom.version>
-        <gravitee-common.version>3.4.2</gravitee-common.version>
-        <gravitee-node.version>4.8.9</gravitee-node.version>
+        <gravitee-bom.version>9.0.0-beta.2</gravitee-bom.version>
+        <gravitee-common.version>5.0.0-beta.1</gravitee-common.version>
+        <gravitee-node.version>8.0.0-beta.2</gravitee-node.version>
         <fabric8.version>4.13.3</fabric8.version>
         <sonar.skip>true</sonar.skip>
         <junit-vintage-engine.version>5.8.2</junit-vintage-engine.version>

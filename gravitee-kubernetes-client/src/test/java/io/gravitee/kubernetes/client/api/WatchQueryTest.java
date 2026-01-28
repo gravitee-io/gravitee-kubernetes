@@ -59,8 +59,7 @@ class WatchQueryTest {
 
     @Test
     void shouldGetSecretsFromNamespace_fieldSelector_usingFrom() {
-        WatchQuery<Event<Secret>> query = WatchQuery
-            .<Secret>from("/my-namespace/secrets")
+        WatchQuery<Event<Secret>> query = WatchQuery.<Secret>from("/my-namespace/secrets")
             .fieldSelector(FieldSelector.equals("status.hostIP", "172.17.8.101"))
             .build();
 

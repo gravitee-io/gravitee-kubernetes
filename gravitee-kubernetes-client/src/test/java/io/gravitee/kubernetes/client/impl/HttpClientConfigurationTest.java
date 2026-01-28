@@ -33,6 +33,7 @@ class HttpClientConfigurationTest {
         assertThat(config.getAccessToken()).isNull();
         KubernetesClientV1Impl kubernetesClientV1 = new KubernetesClientV1Impl(config);
         assertThatCode(kubernetesClientV1::httpClient).doesNotThrowAnyException();
+        assertThatCode(kubernetesClientV1::webSocketClient).doesNotThrowAnyException();
     }
 
     @Test
@@ -40,5 +41,6 @@ class HttpClientConfigurationTest {
         KubernetesConfig config = KubernetesConfig.newInstance("src/test/resources/config.yaml");
         KubernetesClientV1Impl kubernetesClientV1 = new KubernetesClientV1Impl(config);
         assertThatCode(kubernetesClientV1::httpClient).doesNotThrowAnyException();
+        assertThatCode(kubernetesClientV1::webSocketClient).doesNotThrowAnyException();
     }
 }
