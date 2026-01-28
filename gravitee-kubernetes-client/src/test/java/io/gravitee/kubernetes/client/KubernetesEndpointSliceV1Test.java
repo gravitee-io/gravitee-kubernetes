@@ -21,7 +21,7 @@ import io.fabric8.kubernetes.api.model.discovery.EndpointSlice;
 import io.fabric8.kubernetes.api.model.discovery.EndpointSliceBuilder;
 import io.fabric8.kubernetes.api.model.discovery.EndpointSliceList;
 import io.fabric8.kubernetes.api.model.discovery.EndpointSliceListBuilder;
-import io.fabric8.kubernetes.api.model.discovery.EndpointSlicePortBuilder;
+import io.fabric8.kubernetes.api.model.discovery.EndpointPortBuilder;
 import io.gravitee.kubernetes.client.api.FieldSelector;
 import io.gravitee.kubernetes.client.api.LabelSelector;
 import io.gravitee.kubernetes.client.api.ResourceQuery;
@@ -132,7 +132,7 @@ public class KubernetesEndpointSliceV1Test extends KubernetesUnitTest {
         EndpointSlice slice = new EndpointSliceBuilder()
             .withMetadata(new ObjectMetaBuilder().withName("testEndpointSlice").withResourceVersion("1234").build())
             .withAddressType("IPv4")
-            .withPorts(new EndpointSlicePortBuilder().withPort(8080).build())
+            .withPorts(new EndpointPortBuilder().withPort(8080).build())
             .addNewEndpoint()
             .withAddresses("10.0.0.1")
             .endEndpoint()
