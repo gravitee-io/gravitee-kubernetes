@@ -27,7 +27,6 @@ import org.springframework.util.StringUtils;
  */
 abstract class AbstractQuery<T> {
 
-    private static final String API_VERSION = "/api/v1";
 
     protected final Type type;
 
@@ -82,7 +81,7 @@ abstract class AbstractQuery<T> {
     }
 
     public String toUri() {
-        StringBuilder builder = new StringBuilder(API_VERSION);
+        StringBuilder builder = new StringBuilder(type.apiBase());
 
         // Build uri
         if (namespace != null && !namespace.isEmpty()) {

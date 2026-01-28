@@ -22,21 +22,27 @@ import io.gravitee.kubernetes.client.model.v1.*;
  * @author GraviteeSource Team
  */
 public enum Type {
-    ENDPOINTS("endpoints", Endpoints.class, EndpointsList.class, EndpointsEvent.class),
-    ENDPOINTSLICES("endpointslices", EndpointSlice.class, EndpointSliceList.class, EndpointSliceEvent.class),
-    SECRETS("secrets", Secret.class, SecretList.class, SecretEvent.class),
-    CONFIGMAPS("configmaps", ConfigMap.class, ConfigMapList.class, ConfigMapEvent.class);
+    ENDPOINTS("/api/v1", "endpoints", Endpoints.class, EndpointsList.class, EndpointsEvent.class),
+    ENDPOINTSLICES("/apis/discovery.k8s.io/v1", "endpointslices", EndpointSlice.class, EndpointSliceList.class, EndpointSliceEvent.class),
+    SECRETS("/api/v1", "secrets", Secret.class, SecretList.class, SecretEvent.class),
+    CONFIGMAPS("/api/v1", "configmaps", ConfigMap.class, ConfigMapList.class, ConfigMapEvent.class);
 
+    private final String apiBase;
     private final String value;
     private final Class<?> clazz;
     private final Class<?> listType;
     private final Class<? extends Event<Watchable>> eventType;
 
-    Type(String value, Class<?> clazz, Class<?> listType, Class<? extends Event<?>> eventType) {
+    Type(String apiBase, String value, Class<?> clazz, Class<?> listType, Class<? extends Event<?>> eventType) {
+        this.apiBase = apiBase;
         this.value = value;
         this.clazz = clazz;
         this.listType = listType;
         this.eventType = (Class<? extends Event<Watchable>>) eventType;
+    }
+
+    public String apiBase() {
+        return apiBase;
     }
 
     public String value() {
