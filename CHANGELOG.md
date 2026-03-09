@@ -1,3 +1,20 @@
+# [4.0.0-beta.1](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.7.1...4.0.0-beta.1) (2026-03-09)
+
+
+### Bug Fixes
+
+* **deps:** update gravitee orb ([1f647ba](https://github.com/gravitee-io/gravitee-kubernetes/commit/1f647ba060f81f87145e0c0e8dadb8fc5255c8c2))
+
+
+### Features
+
+* upgrade to Vertx 5 ([e34e231](https://github.com/gravitee-io/gravitee-kubernetes/commit/e34e2313415c6e807c446f2587cde030171c5575))
+
+
+### BREAKING CHANGES
+
+* upgrade to Vert.x 5
+
 ## [3.7.1](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.7.0...3.7.1) (2025-12-19)
 
 
