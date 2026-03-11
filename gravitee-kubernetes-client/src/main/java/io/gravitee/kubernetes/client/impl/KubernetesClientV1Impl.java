@@ -39,6 +39,7 @@ import io.vertx.core.net.PemTrustOptions;
 import io.vertx.rxjava3.core.Vertx;
 import io.vertx.rxjava3.core.http.HttpClient;
 import io.vertx.rxjava3.core.http.HttpClientRequest;
+import io.vertx.rxjava3.core.http.WebSocketClient;
 import java.io.ByteArrayOutputStream;
 import java.security.KeyStore;
 import java.util.Map;
@@ -64,11 +65,12 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         // Maintain only one dedicated instance of vertx.
         VertxOptions options = new VertxOptions();
         options.getMetricsOptions().setEnabled(false);
-        VERTX = Vertx.vertx(options);
+        VERTX = Vertx.newInstance(io.vertx.core.Vertx.builder().with(options).build());
     }
 
     private final KubernetesConfig config;
     private HttpClient httpClient;
+    private WebSocketClient webSocketClient;
     private final Map<String, Watch> watchMap = new ConcurrentHashMap<>();
     private final Map<String, Pattern> patternCache = new ConcurrentHashMap<>();
 
@@ -207,8 +209,8 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         final Watch<E> watch = new Watch<>(watchKey);
         final WebSocketConnectOptions webSocketConnectOptions = buildWebSocketConnectOptions(uri);
 
-        final Flowable<E> events = httpClient()
-            .rxWebSocket(webSocketConnectOptions)
+        final Flowable<E> events = webSocketClient()
+            .rxConnect(webSocketConnectOptions)
             .flatMapPublisher(websocket -> {
                 Flowable<E> pingFlowable = websocketPing(websocket);
                 return pingFlowable.compose(
@@ -336,7 +338,7 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                     alias
                 );
                 keyStore.store(output, password.toCharArray());
-                opt.setKeyStoreOptions(
+                opt.setKeyCertOptions(
                     new JksOptions().setPassword(password).setAlias(alias).setValue(Buffer.buffer(output.toByteArray()))
                 );
             } catch (Exception e) {
@@ -360,6 +362,14 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         }
 
         return httpClient;
+    }
+
+    public synchronized WebSocketClient webSocketClient() {
+        if (this.webSocketClient == null) {
+            this.webSocketClient = VERTX.createWebSocketClient(new io.vertx.core.http.WebSocketClientOptions(httpClientOptions()));
+        }
+
+        return webSocketClient;
     }
 
     private static class Watch<E extends Event<? extends Watchable>> {
