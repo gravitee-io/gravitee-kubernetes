@@ -1,3 +1,17 @@
+# [4.0.0-alpha.1](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.7.1...4.0.0-alpha.1) (2026-03-30)
+
+
+### Features
+
+* upgrade to Vertx5 ([#104](https://github.com/gravitee-io/gravitee-kubernetes/issues/104)) ([66063a6](https://github.com/gravitee-io/gravitee-kubernetes/commit/66063a6ec0f460b6dffd3bc4072979fd08efa649))
+
+
+### BREAKING CHANGES
+
+* upgrade to Vert.x 5
+
+ Please enter the commit message for your changes. Lines starting
+
 ## [3.7.1](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.7.0...3.7.1) (2025-12-19)
 
 
