@@ -383,8 +383,7 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
 
         final Flowable<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> watch1 =
             kubernetesClient.watch(
-                WatchQuery
-                    .<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets")
+                WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets")
                     .fieldSelector(FieldSelector.equals("field1", "valueField1"))
                     .fieldSelector(FieldSelector.equals("field2", "valueField2"))
                     .labelSelector(LabelSelector.equals("label1", "valueLabel1"))
@@ -465,9 +464,8 @@ public class KubernetesSecretV1Test extends KubernetesUnitTest {
             kubernetesClient.watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret1").build());
         final Flowable<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> watch2 =
             kubernetesClient.watch(WatchQuery.<io.gravitee.kubernetes.client.model.v1.Secret>from("/test/secrets/secret2").build());
-        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs = Flowable
-            .mergeArray(watch1, watch2)
-            .test();
+        final TestSubscriber<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.Secret>> obs =
+            Flowable.mergeArray(watch1, watch2).test();
 
         obs.await();
         obs.assertValueCount(3);
