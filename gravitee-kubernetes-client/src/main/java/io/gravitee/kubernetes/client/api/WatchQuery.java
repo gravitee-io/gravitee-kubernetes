@@ -53,6 +53,15 @@ public class WatchQuery<E extends Event<? extends Watchable>> extends AbstractQu
         return new WatchQueryBuilder<Endpoints, Event<Endpoints>>(Type.ENDPOINTS).namespace(namespace);
     }
 
+    public static WatchQueryBuilder<EndpointSlice, Event<EndpointSlice>> endpointSlices() {
+        return new WatchQueryBuilder<>(Type.ENDPOINTSLICES);
+    }
+
+    public static WatchQueryBuilder<EndpointSlice, Event<EndpointSlice>> endpointSlices(String namespace) {
+        Objects.requireNonNull(namespace, NAMESPACE_CAN_NOT_BE_NULL);
+        return new WatchQueryBuilder<EndpointSlice, Event<EndpointSlice>>(Type.ENDPOINTSLICES).namespace(namespace);
+    }
+
     public static WatchQueryBuilder<ConfigMap, Event<ConfigMap>> configMaps() {
         return new WatchQueryBuilder<>(Type.CONFIGMAPS);
     }
