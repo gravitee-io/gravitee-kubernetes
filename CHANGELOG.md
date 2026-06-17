@@ -1,3 +1,18 @@
+# [4.0.0](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.7.1...4.0.0) (2026-06-17)
+
+
+### Features
+
+* add endpointslice support to kubernetes client ([05ff8dd](https://github.com/gravitee-io/gravitee-kubernetes/commit/05ff8dd536633a673272facae887c346a98a38d4))
+* upgrade to Vertx5 ([#104](https://github.com/gravitee-io/gravitee-kubernetes/issues/104)) ([37b4f4b](https://github.com/gravitee-io/gravitee-kubernetes/commit/37b4f4ba4712b1a72fc122f1d3eb4e36d2b324f8))
+
+
+### BREAKING CHANGES
+
+* upgrade to Vert.x 5
+
+ Please enter the commit message for your changes. Lines starting
+
 ## [3.7.1](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.7.0...3.7.1) (2025-12-19)
 
 
