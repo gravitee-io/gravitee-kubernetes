@@ -105,8 +105,7 @@ public class KubernetesEndpointSliceV1Test extends KubernetesUnitTest {
 
         final Flowable<io.gravitee.kubernetes.client.model.v1.Event<io.gravitee.kubernetes.client.model.v1.EndpointSlice>> watch =
             kubernetesClient.watch(
-                WatchQuery
-                    .<io.gravitee.kubernetes.client.model.v1.EndpointSlice>from("/test/endpointslices")
+                WatchQuery.<io.gravitee.kubernetes.client.model.v1.EndpointSlice>from("/test/endpointslices")
                     .fieldSelector(FieldSelector.equals("field1", "valueField1"))
                     .fieldSelector(FieldSelector.equals("field2", "valueField2"))
                     .labelSelector(LabelSelector.equals("label1", "valueLabel1"))
