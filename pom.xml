@@ -40,7 +40,7 @@
     <properties>
         <gravitee-bom.version>9.0.3</gravitee-bom.version>
         <gravitee-common.version>5.0.0</gravitee-common.version>
-        <gravitee-node.version>9.2.1</gravitee-node.version>
+        <gravitee-node.version>9.2.2</gravitee-node.version>
         <fabric8.version>4.13.3</fabric8.version>
         <sonar.skip>true</sonar.skip>
         <junit-vintage-engine.version>5.8.2</junit-vintage-engine.version>
