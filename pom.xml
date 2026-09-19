@@ -62,13 +62,6 @@
                 <version>${gravitee-common.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.gravitee.node</groupId>
-                <artifactId>gravitee-node</artifactId>
-                <version>${gravitee-node.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
                 <groupId>io.fabric8</groupId>
                 <artifactId>kubernetes-client</artifactId>
                 <version>${fabric8.version}</version>
