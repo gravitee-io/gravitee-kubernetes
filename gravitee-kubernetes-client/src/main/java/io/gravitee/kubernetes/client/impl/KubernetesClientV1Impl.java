@@ -53,14 +53,14 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 
 /**
  * @author Kamiel Ahmadpour (kamiel.ahmadpour at graviteesource.com)
  * @author GraviteeSource Team
  * @since 3.9.11
  */
-@Slf4j
+@CustomLog
 public class KubernetesClientV1Impl implements KubernetesClient {
 
     private static final long PING_HANDLER_DELAY = 5000L;
