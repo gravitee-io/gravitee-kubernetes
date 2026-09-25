@@ -32,11 +32,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import lombok.AccessLevel;
+import lombok.CustomLog;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.Singular;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author Kamiel Ahmadpour (kamiel.ahmadpour at graviteesource.com)
@@ -45,9 +44,8 @@ import org.slf4j.LoggerFactory;
  */
 @Setter
 @Getter
+@CustomLog
 public class KubernetesConfig {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(KubernetesConfig.class);
 
     public static final String KUBERNETES_SERVICE_HOST_PROPERTY = "KUBERNETES_SERVICE_HOST";
     public static final String KUBERNETES_SERVICE_PORT_HTTPS_PROPERTY = "KUBERNETES_SERVICE_PORT_HTTPS";
@@ -109,7 +107,7 @@ public class KubernetesConfig {
 
     private KubernetesConfig initWithDefaults() {
         if (!(tryKubeConfig() || tryServiceAccount())) {
-            LOGGER.error("Unable to configure Kubernetes Config. No KubeConfig or Service account is found");
+            log.error("Unable to configure Kubernetes Config. No KubeConfig or Service account is found");
         }
         return this;
     }
@@ -129,12 +127,12 @@ public class KubernetesConfig {
      * Find the Kubernetes API Server HOST, PORT from within the pod
      */
     private boolean loadApiServerInfo() {
-        LOGGER.debug("Trying to configure client using service account...");
+        log.debug("Trying to configure client using service account...");
         String host = getSystemPropertyOrEnvVar(KUBERNETES_SERVICE_HOST_PROPERTY, null);
         String port = getSystemPropertyOrEnvVar(KUBERNETES_SERVICE_PORT_HTTPS_PROPERTY, null);
 
         if (host != null && !host.isEmpty() && port != null && !port.isEmpty()) {
-            LOGGER.debug("Found API Server host and port: {}:{}", host, port);
+            log.debug("Found API Server host and port: {}:{}", host, port);
 
             setApiServerHost(host);
             setApiServerPort(Integer.parseInt(port));
@@ -143,7 +141,7 @@ public class KubernetesConfig {
             );
             return true;
         } else {
-            LOGGER.error("Unable to resolve the API Server URL");
+            log.error("Unable to resolve the API Server URL");
             return false;
         }
     }
@@ -159,15 +157,15 @@ public class KubernetesConfig {
         try {
             boolean serviceAccountCaCertExists = Files.isRegularFile(new File(caFilePath).toPath());
             if (serviceAccountCaCertExists) {
-                LOGGER.debug("Found service account ca cert at: [{}]", caFilePath);
+                log.debug("Found service account ca cert at: [{}]", caFilePath);
                 this.setCaCertData(new String(Files.readAllBytes(new File(caFilePath).toPath())));
                 return true;
             } else {
-                LOGGER.error("Did not find service account ca cert at: [{}]", caFilePath);
+                log.error("Did not find service account ca cert at: [{}]", caFilePath);
             }
         } catch (IOException e) {
             // No CA file available...
-            LOGGER.error("Error reading Kubernetes CA file from: [{}].", caFilePath, e);
+            log.error("Error reading Kubernetes CA file from: [{}].", caFilePath, e);
         }
 
         return false;
@@ -190,14 +188,14 @@ public class KubernetesConfig {
         try {
             boolean serviceAccountAccessTokenExists = Files.isRegularFile(new File(tokenFilePath).toPath());
             if (serviceAccountAccessTokenExists) {
-                LOGGER.debug("Found service account token at: [{}].", tokenFilePath);
+                log.debug("Found service account token at: [{}].", tokenFilePath);
                 this.setAccessToken(Files.readString(Path.of(tokenFilePath)));
                 this.accessTokenLastReload = Instant.now();
                 return true;
             }
         } catch (IOException e) {
             // No service account token available...
-            LOGGER.error("Error reading service account token from: [{}].", tokenFilePath, e);
+            log.error("Error reading service account token from: [{}].", tokenFilePath, e);
         }
 
         return false;
@@ -213,11 +211,11 @@ public class KubernetesConfig {
             if (namespaceExists) {
                 String namespace = new String(Files.readAllBytes(new File(namespaceFilePath).toPath()));
                 this.setCurrentNamespace(namespace);
-                LOGGER.debug("Found the current namespace [{}] at: [{}].", namespace, namespaceFilePath);
+                log.debug("Found the current namespace [{}] at: [{}].", namespace, namespaceFilePath);
             }
         } catch (IOException e) {
             // No service account token available...
-            LOGGER.error("Unable to read the current namespace from file: [{}].", namespaceFilePath, e);
+            log.error("Unable to read the current namespace from file: [{}].", namespaceFilePath, e);
         }
     }
 
@@ -226,13 +224,13 @@ public class KubernetesConfig {
     }
 
     public boolean tryKubeConfig(String kubeConfigLocation) {
-        LOGGER.debug("Trying to configure client from Kubernetes config...");
+        log.debug("Trying to configure client from Kubernetes config...");
         File kubeConfigFile = new File(getKubeConfigFilename(kubeConfigLocation));
         if (!kubeConfigFile.isFile()) {
-            LOGGER.debug("Did not find Kubernetes config at: [{}]. Ignoring.", kubeConfigFile.getPath());
+            log.debug("Did not find Kubernetes config at: [{}]. Ignoring.", kubeConfigFile.getPath());
             return false;
         }
-        LOGGER.debug("Found Kubernetes config at: [{}].", kubeConfigFile.getPath());
+        log.debug("Found Kubernetes config at: [{}].", kubeConfigFile.getPath());
         String kubeConfigContents = getKubeConfigContents(kubeConfigFile);
         if (kubeConfigContents == null) {
             return false;
@@ -264,7 +262,7 @@ public class KubernetesConfig {
                 return true;
             }
         } catch (Exception e) {
-            LOGGER.error("Failed to parse the kube config.", e);
+            log.error("Failed to parse the kube config.", e);
         }
 
         return false;
@@ -397,7 +395,7 @@ public class KubernetesConfig {
             }
             return writer.toString();
         } catch (IOException e) {
-            LOGGER.error("Could not load Kubernetes config file from {}", kubeConfigFile.getPath(), e);
+            log.error("Could not load Kubernetes config file from {}", kubeConfigFile.getPath(), e);
             return null;
         }
     }
@@ -459,7 +457,7 @@ public class KubernetesConfig {
         String[] fileNames = fileName.split(File.pathSeparator);
 
         if (fileNames.length > 1) {
-            LOGGER.warn(
+            log.warn(
                 "Found multiple Kubernetes config files [{}], using the first one: [{}]. If not desired file, please change it by doing `export KUBECONFIG=/path/to/kubeconfig` on Unix systems or `$Env:KUBECONFIG=/path/to/kubeconfig` on Windows.",
                 fileNames,
                 fileNames[0]
