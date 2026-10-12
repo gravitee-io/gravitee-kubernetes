@@ -17,9 +17,14 @@ package io.gravitee.kubernetes.client.config;
 
 import static org.assertj.core.api.Assertions.*;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
  * @author Benoit BORDIGONI (benoit.bordigoni at graviteesource.com)
@@ -86,5 +91,40 @@ class KubernetesConfigTest {
         assertThat(instance.getAccessToken()).isNull();
         instance.loadServiceAccountToken("src/test/resources/token");
         assertThat(instance.getAccessToken()).isNotBlank();
+    }
+
+    @Test
+    void should_reload_token_from_file_when_rotated(@TempDir Path dir) throws Exception {
+        Path token = dir.resolve("token");
+        Files.writeString(token, "token-1");
+        KubernetesConfig instance = KubernetesConfig.newInstance();
+        instance.loadServiceAccountToken(token.toString());
+
+        Files.writeString(token, "token-2");
+        assertThat(instance.reloadAccessToken()).isEqualTo("token-2");
+        assertThat(instance.getAccessToken()).isEqualTo("token-2");
+    }
+
+    @Test
+    void should_reload_token_from_file_1_minute_after_last_reload(@TempDir Path dir) throws Exception {
+        Path token = dir.resolve("token");
+        Files.writeString(token, "token-1");
+        KubernetesConfig instance = KubernetesConfig.newInstance();
+        instance.loadServiceAccountToken(token.toString());
+
+        Files.writeString(token, "token-2");
+        assertThat(instance.getAccessToken()).as("reloaded less than 1 minute ago").isEqualTo("token-1");
+
+        instance.setAccessTokenLastReload(Instant.now().minus(61, ChronoUnit.SECONDS));
+        assertThat(instance.getAccessToken()).as("reloaded more than 1 minute ago").isEqualTo("token-2");
+    }
+
+    @Test
+    void should_not_reload_token_not_loaded_from_file() {
+        KubernetesConfig instance = KubernetesConfig.newInstance("src/test/resources/config.yaml");
+        String token = instance.getAccessToken();
+
+        assertThat(instance.reloadAccessToken()).isEqualTo(token);
+        assertThat(instance.getAccessToken()).isEqualTo(token);
     }
 }
