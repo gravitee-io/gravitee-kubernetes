@@ -36,9 +36,7 @@ public abstract class KubernetesUnitTest {
         server = new KubernetesMockServer(true);
         server.init();
 
-        // Set kubeconfig system property to use for creating a
-        buildKubernetesConfig();
-        kubernetesClient = new KubernetesClientV1Impl();
+        kubernetesClient = new KubernetesClientV1Impl(buildKubernetesConfig());
     }
 
     @After
@@ -47,10 +45,12 @@ public abstract class KubernetesUnitTest {
     }
 
     // Helper methods
-    protected void buildKubernetesConfig() {
-        KubernetesConfig config = KubernetesConfig.getInstance();
+    // A dedicated config per test: watches left open by a previous test must not reconnect to this test's server.
+    protected KubernetesConfig buildKubernetesConfig() {
+        KubernetesConfig config = KubernetesConfig.newInstance();
         config.setApiServerHost(server.getHostName());
         config.setApiServerPort(server.getPort());
         config.setVerifyHost(false);
+        return config;
     }
 }
