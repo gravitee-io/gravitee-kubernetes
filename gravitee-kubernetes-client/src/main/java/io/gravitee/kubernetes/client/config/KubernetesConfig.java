@@ -53,7 +53,13 @@ public class KubernetesConfig {
     public static final String KUBERNETES_SERVICE_PORT_HTTPS_PROPERTY = "KUBERNETES_SERVICE_PORT_HTTPS";
     public static final String KUBERNETES_SERVICE_ACCOUNT_TOKEN_PATH = "KUBERNETES_SERVICE_ACCOUNT_TOKEN_PATH";
     public static final String KUBERNETES_SERVICE_ACCOUNT_CA_CRT_PATH = "KUBERNETES_SERVICE_ACCOUNT_CA_CRT_PATH";
+
+    /**
+     * @deprecated the service account token is now always reloaded from its file, whether token projection is enabled or not.
+     */
+    @Deprecated
     public static final String KUBERNETES_SERVICE_ACCOUNT_TOKEN_PROJECTION_ENABLED = "KUBERNETES_SERVICE_ACCOUNT_TOKEN_PROJECTION_ENABLED";
+
     public static final String KUBERNETES_CURRENT_NAMESPACE_PATH = "KUBERNETES_CURRENT_NAMESPACE";
     public static final String KUBERNETES_KUBECONFIG_FILE = "kubeconfig";
     static final Long DEFAULT_WEBSOCKET_TIMEOUT = 5 * 60 * 1000L;
@@ -68,12 +74,21 @@ public class KubernetesConfig {
     @Getter(AccessLevel.NONE)
     private boolean useSSL = true;
 
-    private String accessToken;
+    private volatile String accessToken;
+
+    /**
+     * @deprecated the service account token is now always reloaded from its file, whether token projection is enabled or not.
+     */
+    @Deprecated
     private boolean accessTokenProjectionEnabled;
 
     @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.PACKAGE) // for tests
+    private volatile Instant accessTokenLastReload;
+
+    @Getter(AccessLevel.NONE)
     @Setter(AccessLevel.NONE)
-    private Instant accessTokenLastReload;
+    private volatile String accessTokenPath;
 
     private String currentNamespace;
     private long websocketTimeout = DEFAULT_WEBSOCKET_TIMEOUT;
@@ -184,7 +199,7 @@ public class KubernetesConfig {
      * Load the Kubernetes Service account with token from a file
      * @param tokenPath file containing token or null to use the default location
      */
-    public boolean loadServiceAccountToken(String tokenPath) {
+    public synchronized boolean loadServiceAccountToken(String tokenPath) {
         String fallbackTokenPath = tokenPath != null ? tokenPath : "/var/run/secrets/kubernetes.io/serviceaccount/token";
         String tokenFilePath = getSystemPropertyOrEnvVar(KUBERNETES_SERVICE_ACCOUNT_TOKEN_PATH, fallbackTokenPath);
         try {
@@ -192,6 +207,7 @@ public class KubernetesConfig {
             if (serviceAccountAccessTokenExists) {
                 LOGGER.debug("Found service account token at: [{}].", tokenFilePath);
                 this.setAccessToken(Files.readString(Path.of(tokenFilePath)));
+                this.accessTokenPath = tokenFilePath;
                 this.accessTokenLastReload = Instant.now();
                 return true;
             }
@@ -472,11 +488,24 @@ public class KubernetesConfig {
     }
 
     public String getAccessToken() {
-        //reload only if at least 5 minutes have passed since the last reload
-        if (isAccessTokenProjectionEnabled() && Instant.now().isAfter(this.accessTokenLastReload.plus(5, ChronoUnit.MINUTES))) {
-            loadServiceAccountToken();
+        // Service account tokens are rotated on disk by the kubelet (bound tokens expire, e.g. after 1h on AKS).
+        // Reload only if at least 5 minutes have passed since the last reload.
+        if (accessTokenPath != null && Instant.now().isAfter(this.accessTokenLastReload.plus(5, ChronoUnit.MINUTES))) {
+            loadServiceAccountToken(accessTokenPath);
         }
 
+        return accessToken;
+    }
+
+    /**
+     * Force a reload of the service account token from its file, e.g. after the API server rejected it.
+     *
+     * @return the current access token, unchanged if it does not come from a file
+     */
+    public synchronized String reloadAccessToken() {
+        if (accessTokenPath != null) {
+            loadServiceAccountToken(accessTokenPath);
+        }
         return accessToken;
     }
 

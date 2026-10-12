@@ -44,6 +44,7 @@ import java.security.KeyStore;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 
@@ -205,11 +206,16 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         log.debug("Start watching resources from [{}]", uri);
 
         final Watch<E> watch = new Watch<>(watchKey);
-        final WebSocketConnectOptions webSocketConnectOptions = buildWebSocketConnectOptions(uri);
+        final AtomicReference<String> sentAccessToken = new AtomicReference<>();
 
-        final Flowable<E> events = httpClient()
-            .rxWebSocket(webSocketConnectOptions)
-            .flatMapPublisher(websocket -> {
+        // Connect options are built on each (re)connection so that a rotated service account token is always used.
+        final Flowable<E> events = Flowable
+            .defer(() -> {
+                String accessToken = kubeConfig().getAccessToken();
+                sentAccessToken.set(accessToken);
+                return httpClient().rxWebSocket(buildWebSocketConnectOptions(uri, accessToken)).toFlowable();
+            })
+            .flatMap(websocket -> {
                 Flowable<E> pingFlowable = websocketPing(websocket);
                 return pingFlowable.compose(
                     mergeWithFirst(
@@ -249,13 +255,15 @@ public class KubernetesClientV1Impl implements KubernetesClient {
                 errors.flatMap(error -> {
                     if (
                         error instanceof UpgradeRejectedException upgradeRejectedException &&
-                        upgradeRejectedException.getStatus() == 401 &&
-                        kubeConfig().getAccessToken() != null &&
-                        !kubeConfig().getAccessToken().isBlank()
+                        upgradeRejectedException.getStatus() == HttpStatusCode.UNAUTHORIZED_401
                     ) {
-                        log.debug("Refreshing Service Account authorization token...");
-                        webSocketConnectOptions.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + kubeConfig().getAccessToken());
-                        return Flowable.empty();
+                        // Compare with the token sent by this watch: another watch may already have reloaded the shared config.
+                        String accessToken = kubeConfig().reloadAccessToken();
+                        if (accessToken != null && !accessToken.isBlank() && !accessToken.equals(sentAccessToken.get())) {
+                            log.info("Service Account authorization token has been refreshed, reconnecting to [{}]", uri);
+                            return Flowable.timer(DISCONNECT_REPEAT_AFTER_MILLIS, TimeUnit.MILLISECONDS);
+                        }
+                        log.warn("Service Account authorization token has been rejected while watching resources from [{}]", uri);
                     }
                     return Flowable.error(error);
                 })
@@ -295,15 +303,15 @@ public class KubernetesClientV1Impl implements KubernetesClient {
         return requestOptions;
     }
 
-    private WebSocketConnectOptions buildWebSocketConnectOptions(String uri) {
+    private WebSocketConnectOptions buildWebSocketConnectOptions(String uri, String accessToken) {
         WebSocketConnectOptions options = new WebSocketConnectOptions()
             .setURI(uri)
             .setHost(kubeConfig().getApiServerHost())
             .setPort(kubeConfig().getApiServerPort())
             .setSsl(kubeConfig().useSSL())
             .addHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
-        if (kubeConfig().getAccessToken() != null && !kubeConfig().getAccessToken().isBlank()) {
-            options.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + kubeConfig().getAccessToken());
+        if (accessToken != null && !accessToken.isBlank()) {
+            options.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken);
         }
         return options;
     }
