@@ -1,3 +1,10 @@
+## [4.0.1](https://github.com/gravitee-io/gravitee-kubernetes/compare/4.0.0...4.0.1) (2026-10-19)
+
+
+### Bug Fixes
+
+* keep watching resources after the service account token has been rotated ([ae6bb1f](https://github.com/gravitee-io/gravitee-kubernetes/commit/ae6bb1f3e9edc6b1a2219b0367c731bc8cdda505))
+
 # [4.0.0](https://github.com/gravitee-io/gravitee-kubernetes/compare/3.7.1...4.0.0) (2026-06-17)
 
 
